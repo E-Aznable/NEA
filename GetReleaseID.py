@@ -1,0 +1,1 @@
+# this takes an album name and artist name to give us a release ID and other useful stuff
