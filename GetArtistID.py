@@ -1,10 +1,9 @@
 # take an artist name and return their discogs ID and thumbnail address
 # it should double-check if the artist is already in the table though
 
-from dependencies import *
-from urllib import *
 import urllib.parse
 import urllib.request
+import json
 
 data_response = []
 
@@ -22,21 +21,23 @@ url = f"https://api.discogs.com/database/search?q={encoded}&type=artist&key=xrSb
 
 try:
   # Make the HTTP request to the Discogs API
-  response = urllib.request.urlopen(url)
+  data_response = json.load(urllib.request.urlopen(url))
+  # could be nicer to separate the request and variable assignment, but we're saving a single line of code here so
   
   # Check if the request was successful
 except urllib.error.URLError as e:
     print(e.reason)
   
 # Parse the JSON response
-data_response = response.read()
+# up there now
   
 # Log or process the returned data
 print("Discogs API response:", data_response)
   
+# retrieve data from parsed response
+# don't worry about that warning it'll never matter
+artist_id = data_response["results"][0]["id"]
+print(artist_id)
 
-# artist_id = data_response.results[0].id.toString()
-# print(artist_id)
-
-# image_url = data_response.results[0].cover_image
-# print(image_url)
+image_url = data_response["results"][0]["cover_image"]
+print(image_url)
