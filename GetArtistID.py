@@ -13,7 +13,8 @@ encoded = urllib.parse.quote(artist_name)
 print(encoded)
 
 # this is not very important but it's nice
-user_agent = "personal music manager"
+# user_agent = "personal music manager"
+# actually kind of unnecessary
 
 # Construct the API URL
 # Construct the Discogs API URL using consumer key and secret for authentication

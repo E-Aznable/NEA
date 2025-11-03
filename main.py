@@ -30,3 +30,4 @@ if not exists_check:
         print("Failed to open database:", e)
 else:
     print("local database exists")
+
