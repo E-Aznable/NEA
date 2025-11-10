@@ -61,4 +61,4 @@ if (main_release_id == None):
         print(latst_release_name)
         break
 else:
-    print("should be all good")
+    print("SUCCESS: should be all good")
