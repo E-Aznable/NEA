@@ -17,15 +17,17 @@ if not exists_check:
             # this is just placeholder to add a value, it doesn't like to be run when there is already a table
             cursor = conn.cursor()
             cursor.execute("""CREATE TABLE users
-                            (UserID INTEGER PRIMARY KEY AUTOINCREMENT, UserName varchar(255) NOT NULL)""")
-            cursor.execute("""INSERT INTO users (UserName)
-                            VALUES ('Harper')""") 
+                            (UserID INTEGER PRIMARY KEY AUTOINCREMENT, UserName varchar(255) NOT NULL, UserPass varchar(255) NOT NULL)""") # maybe make password not null somewhen idk
+            cursor.execute("""INSERT INTO users (UserName, UserPass)
+                            VALUES ('Harper', 'testing')""") 
+            # cursor.execute("""INSERT INTO users (UserPass)
+            #                 VALUES ('testing')""")
             conn.commit
 
             # this also a very barebones silly return statement
             cursor.execute('SELECT * FROM users')
             result = cursor.fetchone()
-            print(f'UserID: {result[0]}, Name: {result[1]}')
+            print(f'UserID: {result[0]}, Name: {result[1]}, Password: {result[2]}')
 
 
     except sqlite3.OperationalError as e:
