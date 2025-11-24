@@ -38,6 +38,7 @@ class login_system:
                     print("invalid input")
             
         # add username and password to table + ID is generated automatically
+        # array is just easier to add multiple values
         self.fields = ["UserName", "UserPass"]
         self.values = [new_name, new_pass]
 
@@ -64,10 +65,12 @@ class login_system:
             print("Failed to open database:", e)
                 
         
-    def login(self):
+    def login(self, input_name, input_pass):
         print("login is case sensitive")
-        input_name = input("enter username: ")
-        input_pass = input("input password: ")
+        self.input_name = input_name #editing this for cross file use
+        self.input_pass = input_pass
+        # input_name = input("enter username: ")
+        # input_pass = input("input password: ")
         # if input_name in usernames[] and input_pass in passwords[]:
         #     print("nice")
         # else:
@@ -96,10 +99,11 @@ class login_system:
 
         success = False
         for i in range(len(self.usernames)):
-            if input_name in self.usernames[i] and input_pass in self.passwords[i]:
+            if self.input_name in self.usernames[i] and self.input_pass in self.passwords[i]: # self is for cross file use
                 print("login recognised")
                 success = True
                 break
+                # this still needs to return the user id and specify it as the id to be used for the current session
         if not success:
             print("username or password not recognised")
 
@@ -112,5 +116,5 @@ class login_system:
         if choice == 'e':
             self.login()
 
-obj = login_system()
-obj.choose()
+# obj = login_system()
+# obj.choose()
