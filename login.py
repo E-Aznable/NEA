@@ -15,66 +15,23 @@ class login_system:
     def __init__(self):
         pass
 
-    def register(self):
-        happy = False
-        while not happy:
-            new_name = input("new name: ")
-            confirm_pass = 1
-            new_pass = -1
-            while new_pass != confirm_pass:
-                print("please enter and confirm password")
-                new_pass = input("new password: ")
-                confirm_pass = input("confirm password: ")
-            while True:
-                user_happy = input(f"are you happy with this username: -{new_name}- and this password: -{new_pass}- ? Yes/No: ")
-                if user_happy.lower() in ["y", "yes"]:
-                    print("cool")
-                    happy = True
-                    break
-                elif user_happy.lower() in ["n", "no"]:
-                    print("try again then")
-                    break
-                else:
-                    print("invalid input")
+
+    def register(self, input_name, input_pass): 
+        self.new_name = input_name # modifying to take input in GUI
+        self.new_pass = input_pass
+        
+        # an 'are you happy with your password?' popup might be nice
             
         # add username and password to table + ID is generated automatically
         # array is just easier to add multiple values
         self.fields = ["UserName", "UserPass"]
-        self.values = [new_name, new_pass]
-
-    # add to table seperately
-    def add_to_users (self): # value here is the actual data we want to add
-        try:
-            with sqlite3.connect("MusicDB.db") as conn:
-                print(f"Opened SQLite database with version {sqlite3.sqlite_version} successfully.")
-                cursor = conn.cursor()
-                # need to check if the value already exists first
-                result = cursor.execute(f"""SELECT * FROM users
-                                        WHERE {self.fields[0]}=?""",(self.values[0],)).fetchone()
-                    
-                if result: # if a thing already exists
-                    print("value already exists")
-                    
-                else: # if a thing doesn't exist
-                    cursor.execute(f"""INSERT INTO users ({self.fields[0]}, {self.fields[1]})
-                                    VALUES ('{self.values[0]}', '{self.values[1]}')""")
-                    print("added data successfully") # succes message for testing
-                    conn.commit
-
-        except sqlite3.OperationalError as e:
-            print("Failed to open database:", e)
+        self.values = [self.new_name, self.new_pass]
                 
         
-    def login(self, input_name, input_pass):
+    def login(self, input_name, input_pass): # this needs to return a positive/negative and some kind of ID/login token
         print("login is case sensitive")
         self.input_name = input_name #editing this for cross file use
         self.input_pass = input_pass
-        # input_name = input("enter username: ")
-        # input_pass = input("input password: ")
-        # if input_name in usernames[] and input_pass in passwords[]:
-        #     print("nice")
-        # else:
-        #     print("bad")
         try: # this section could be done at the top of the class but is only actually necessary here to check
             with sqlite3.connect("MusicDB.db") as conn:
                 print(f"Opened SQLite database with version {sqlite3.sqlite_version} successfully.")
@@ -99,22 +56,44 @@ class login_system:
 
         success = False
         for i in range(len(self.usernames)):
-            if self.input_name in self.usernames[i] and self.input_pass in self.passwords[i]: # self is for cross file use
+            if self.input_name == self.usernames[i] and self.input_pass == self.passwords[i]: # self is for cross file use
                 print("login recognised")
                 success = True
+                return (self.IDs[i]) # return version 1
                 break
                 # this still needs to return the user id and specify it as the id to be used for the current session
         if not success:
             print("username or password not recognised")
 
 
-    def choose(self):
-        choice = input("enter n for new user or e for exsisting user: ")
-        if choice == 'n':
-            self.register()
-            self.add_to_users()
-        if choice == 'e':
-            self.login()
+    
+    # add to table seperately
+    def add_to_users (self): # value here is the actual data we want to add
+        try:
+            with sqlite3.connect("MusicDB.db") as conn:
+                print(f"Opened SQLite database with version {sqlite3.sqlite_version} successfully.")
+                cursor = conn.cursor()
+                # need to check if the value already exists first
+                result = cursor.execute(f"""SELECT * FROM users
+                                        WHERE {self.fields[0]}=?""",(self.values[0],)).fetchone()
+                    
+                if result: # if a thing already exists
+                    print("value already exists")
+                    
+                else: # if a thing doesn't exist
+                    cursor.execute(f"""INSERT INTO users ({self.fields[0]}, {self.fields[1]})
+                                    VALUES ('{self.values[0]}', '{self.values[1]}')""")
+                    print("added data successfully") # succes message for testing
+                    conn.commit
+
+        except sqlite3.OperationalError as e:
+            print("Failed to open database:", e)
+
+        self.fields = []
+        self.values = [] # clear arrays just in case
+
+
+# testing stuff down here
 
 # obj = login_system()
-# obj.choose()
+# obj.login('testing', 'testing')
