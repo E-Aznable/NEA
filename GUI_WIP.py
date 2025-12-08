@@ -37,13 +37,18 @@ class DatabaseApp:
         self.sign_in_button.pack()
         self.sign_up_button = tk.Button(self.pane, text="Add new user", command=self.sign_up_user)
         self.sign_up_button.pack()
+        
+        self.incorrect_label = tk.Label(self.pane, text="no input yet") # bad input message, no need to pack it
 
-        self.user_listbox = tk.Listbox(self.pane)
-        self.pass_listbox = tk.Listbox(self.pane)
-        self.user_listbox.pack(side=LEFT, fill=X, expand=True, padx=5, pady=5)
-        self.pass_listbox.pack(side=RIGHT, fill=X, expand=True, padx=5, pady=5)
 
-        self.load_users()
+        # this stuff is only necessary for testing
+
+        # self.user_listbox = tk.Listbox(self.pane)
+        # self.pass_listbox = tk.Listbox(self.pane)
+        # self.user_listbox.pack(side=LEFT, fill=X, expand=True, padx=5, pady=5)
+        # self.pass_listbox.pack(side=RIGHT, fill=X, expand=True, padx=5, pady=5)
+
+        # self.load_users() 
 
     login_system = login_system()
 
@@ -57,10 +62,18 @@ class DatabaseApp:
 
     # need a function that runs an 'add something' screen to get input new music/artists/both
 
+    def incorrect_label_func(self): # trying to make an 'incorrect input' message appear in the gui
+        if self.incorrect_label:
+            self.incorrect_label.destroy()
+        self.incorrect_label = tk.Label(self.pane, text = "incorrect username or password", fg="red")
+        self.incorrect_label.pack(side=TOP)
+
     def sign_in_user(self):
         input_name = self.user_var.get() # i think this is probably the nicest way to do this
         input_pass = self.pass_var.get()
-        login_system.login(self, input_name, input_pass) # this works yes
+        login_result = login_system.login(self, input_name, input_pass) # this works yes
+        if login_result is None:
+            self.incorrect_label_func()
         self.user_var.set("")
         self.pass_var.set("")
         # need to return user ID to load pages for the correct user
@@ -75,6 +88,7 @@ class DatabaseApp:
         self.pass_var.set("")
         self.load_users() # refresh table for testing
 
+    
     def load_users(self): # to make logging in easy for development
         self.user_listbox.delete(0, tk.END)
         self.pass_listbox.delete(0, tk.END)
@@ -84,7 +98,6 @@ class DatabaseApp:
             # self.user_listbox.insert(tk.END, row[0]) # want to display these with relavant field names and not one afer the others as they are now
             self.user_listbox.insert(tk.END, row[1])
             self.pass_listbox.insert(tk.END, row[2])
-            # self.user_listbox.insert(tk.END, row[2])
         
     # users should only be able to delete data that is theirs while logged in
     # # so this needs to change
