@@ -113,7 +113,7 @@ class CollectionPage(tk.Frame):
 
         # button to show frame 2 with text
         # layout2
-        button1 = ttk.Button(self, text="StartPage",
+        button1 = ttk.Button(self, text="login page",
                              command=lambda: controller.show_frame(StartPage))
 
         # putting the button in its place
