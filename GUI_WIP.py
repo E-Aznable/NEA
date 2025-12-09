@@ -54,10 +54,10 @@ class StartPage(tk.Frame):
         # label of frame Layout 2
         label = ttk.Label(self, text="login page", font=LARGE_FONT)
         # putting the grid in its place by using grid
-        label.grid(row=0, column=4, padx=10, pady=10)
+        label.grid(row=0, column=2, padx=10, pady=10)
 
         sign_in_button = tk.Button(self, text="Sign in", command=lambda: sign_in_user())
-        sign_in_button.grid(row=4, column=1, padx=10, pady=10)
+        sign_in_button.grid(row=4, column=2, padx=10, pady=10)
 
         # button1 = ttk.Button(self, text="Page 1", command=lambda: controller.show_frame(CollectionPage))
         # button1.grid(row=1, column=1, padx=10, pady=10)
@@ -99,7 +99,7 @@ class StartPage(tk.Frame):
             if self.incorrect_label:
                 self.incorrect_label.destroy()
             self.incorrect_label = tk.Label(self, text ="incorrect username or password", fg="red")
-            self.incorrect_label.grid(row=5, column=1, padx=10, pady=10)
+            self.incorrect_label.grid(row=5, column=2, padx=10, pady=10)
 
     login_system = login_system()
 
