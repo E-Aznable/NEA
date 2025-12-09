@@ -7,11 +7,11 @@ import json
 data_response = []
 
 # need to take an input from another file
-artist_name = "castle rat"  # placeholder
+artist_name = "pink floyd"  # placeholder
 encoded_artist = urllib.parse.quote(artist_name)
 print(encoded_artist)
 
-release_name = "the bestiary" # placeholder
+release_name = "dark side of the moon" # placeholder
 encoded_release = urllib.parse.quote(release_name)
 
 # this is not very important but it's nice

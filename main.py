@@ -19,7 +19,7 @@ if not exists_check:
             cursor.execute("""CREATE TABLE users
                             (UserID INTEGER PRIMARY KEY AUTOINCREMENT,
                              UserName varchar(255) NOT NULL, 
-                             UserPass varchar(255) NOT NULL)""") # maybe make password not null somewhen idk
+                             UserPass varchar(255) NOT NULL)""")
             cursor.execute("""INSERT INTO users (UserName, UserPass)
                             VALUES ('testing', 'testing')""")
             
@@ -27,6 +27,8 @@ if not exists_check:
                             (ArtistID INTEGER PRIMARY KEY AUTOINCREMENT, 
                             ArtistName varchar(255) NOT NULL,
                             DiscogsArtistID INTEGER NOT NULL)""")
+            cursor.execute("""INSERT INTO artists (ArtistName, DiscogsArtistID)
+                            VALUES ('pink floyd', 45467)""") # placeholder
 
             cursor.execute("""CREATE TABLE releases
                             (ReleaseID INTEGER PRIMARY KEY AUTOINCREMENT, 
@@ -35,22 +37,28 @@ if not exists_check:
                             DiscogsReleaseID INTEGER NOT NULL,
                             FOREIGN KEY(ArtistID) REFERENCES artists(ArtistID))""")
             # might need to get master id from discogs, may still call it DiscogsReleaseID in here for clarity though
+            cursor.execute("""INSERT INTO releases (ReleaseName, ArtistID, DiscogsReleaseID)
+                            VALUES ('dark side of the moon', 45467, 10362)""") # placeholder
 
             # need secondary user versions of releases and artists to deal with many to many relations
             cursor.execute("""CREATE TABLE user_artists
-                            (recordID INTEGER PRIMARY KEY AUTOINCREMENT,
+                            (user_artistID INTEGER PRIMARY KEY AUTOINCREMENT,
                             UserID INTEGER NOT NULL,
                             ArtistID INTEGER NOT NULL,
                             FOREIGN KEY(ArtistID) REFERENCES artists(ArtistID),
                             FOREIGN KEY(UserID) REFERENCES users(UserID))""")
+            cursor.execute("""INSERT INTO user_artists (UserID, ArtistID)
+                            VALUES (1, 45467)""") # placeholder
             cursor.execute("""CREATE TABLE user_releases
-                            (recordID INTEGER PRIMARY KEY AUTOINCREMENT,
+                            (user_releaseID INTEGER PRIMARY KEY AUTOINCREMENT,
                             UserID INTEGER NOT NULL,
                             ReleaseID INTEGER NOT NULL,
                             FOREIGN KEY(ReleaseID) REFERENCES releases(ReleaseID),
                             FOREIGN KEY(UserID) REFERENCES users(UserID))""")
-            
-            conn.commit
+            cursor.execute("""INSERT INTO user_releases (UserID, ReleaseID)
+                            VALUES (1, 10362)""")
+
+            conn.commit()
 
             # this also a very barebones silly return statement
             cursor.execute('SELECT * FROM users')

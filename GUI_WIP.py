@@ -1,123 +1,188 @@
-# example of a really simple GUI database, still in progress
+# this should be one of the bigger files that calls all the others
+
+# NEED A MAJOR REFACTOR TO ACCOMMODATE MULTIPLE PAGES!!!!
 
 import tkinter as tk
 import sqlite3
 from login import * # import login system
-from tkinter import messagebox
+from tkinter import ttk
 from tkinter import *
 
-class DatabaseApp:
-    def __init__(self, root):
-        # initializes database and shows login screen
-        self.root = root
-        self.pane = Frame(root)
-        self.pane.pack(fill=BOTH, expand=True) # pane that expands to window size, more flexible than just using root
-        self.root.title("SQLite Database GUI v1.5")
+LARGE_FONT = ("Verdana", 12)
+
+
+class DatabaseApp(tk.Tk):
+    def __init__(self, *args, **kwargs):
+        # initializes tk functions, creates frames, containers and iterates through page layouts
+        tk.Tk.__init__(self, *args, **kwargs)
+
+        container = tk.Frame(self)
+        container.pack(side="top", fill="both", expand=True)
+
+        container.grid_rowconfigure(0, weight=1)
+        container.grid_columnconfigure(0, weight=1)
+
+        # initializing frames to an empty array
+        self.frames = {}
+
+        # iterating through a tuple consisting
+        # of the different page layouts
+        for F in (StartPage, CollectionPage):
+            frame = F(container, self)
+
+            # initializing frame of that object from
+            # StartPage, page1, page2 respectively with
+            # for loop
+            self.frames[F] = frame
+
+            frame.grid(row=0, column=0, sticky="nsew")
+
+        self.show_frame(StartPage)
+
+        # to display the current frame passed as
+        # parameter
+
+    def show_frame(self, cont):
+        frame = self.frames[cont]
+        frame.tkraise()
+
+
+class StartPage(tk.Frame):
+    def __init__(self, parent, controller):
+        tk.Frame.__init__(self, parent)
+
+        # label of frame Layout 2
+        label = ttk.Label(self, text="login page", font=LARGE_FONT)
+        # putting the grid in its place by using grid
+        label.grid(row=0, column=4, padx=10, pady=10)
+
+        sign_in_button = tk.Button(self, text="Sign in", command=lambda: sign_in_user())
+        sign_in_button.grid(row=4, column=1, padx=10, pady=10)
+
+        # button1 = ttk.Button(self, text="Page 1", command=lambda: controller.show_frame(CollectionPage))
+        # button1.grid(row=1, column=1, padx=10, pady=10)
 
         # Create a database or connect to an existing one
-        self.conn = sqlite3.connect("MusicDB.db") # using our db
-        self.cursor = self.conn.cursor()
-
-        # was considering a CREATE IF NOT statement but main should always run before GUI so im not going to worry
+        conn = sqlite3.connect("MusicDB.db") # using our db
+        cursor = conn.cursor()
 
         # Create GUI elements
-        self.user_var=tk.StringVar() # set username as a string var for input later
-        self.user_label = tk.Label(self.pane, text="username:")
-        self.user_label.pack(side=TOP, fill=X)
-        self.user_entry = tk.Entry(self.pane, textvariable = self.user_var)
-        self.user_entry.pack(side=TOP)
-        
-        self.pass_var=tk.StringVar() # set password as string var too
-        self.pass_label = tk.Label(self.pane, text="password:")
-        self.pass_label.pack(side=TOP, fill=X)
-        self.pass_entry = tk.Entry(self.pane, textvariable = self.pass_var)
-        self.pass_entry.pack(side=TOP)
+        user_var=tk.StringVar() # set username as a string var for input later
+        user_label = tk.Label(self, text="username:")
+        user_label.grid(row=2, column=1, padx=10, pady=10)
+        user_entry = tk.Entry(self, textvariable = user_var)
+        user_entry.grid(row=2, column=2, padx=10, pady=10)
 
-        self.sign_in_button = tk.Button(self.pane, text="Sign in", command=self.sign_in_user)
-        self.sign_in_button.pack()
-        self.sign_up_button = tk.Button(self.pane, text="Add new user", command=self.sign_up_user)
-        self.sign_up_button.pack()
-        
-        self.incorrect_label = tk.Label(self.pane, text="no input yet") # bad input message, no need to pack it
+        pass_var=tk.StringVar() # set password as string var too
+        pass_label = tk.Label(self, text="password:")
+        pass_label.grid(row=3, column=1, padx=10, pady=10)
+        pass_entry = tk.Entry(self, textvariable = pass_var)
+        pass_entry.grid(row=3, column=2, padx=10, pady=10)
 
+        # sign_up_button = tk.Button(self, text="Add new user", command=self.sign_up_user)
+        # sign_up_button.grid(row=5, column=1, padx=10, pady=10)
 
-        # this stuff is only necessary for testing
+        self.incorrect_label = tk.Label(self, text="no input yet") # as far as I can tell this kind of needs to exist before its actually used
 
-        # self.user_listbox = tk.Listbox(self.pane)
-        # self.pass_listbox = tk.Listbox(self.pane)
-        # self.user_listbox.pack(side=LEFT, fill=X, expand=True, padx=5, pady=5)
-        # self.pass_listbox.pack(side=RIGHT, fill=X, expand=True, padx=5, pady=5)
+        def sign_in_user():
+            input_name = user_var.get() # I think this is probably the nicest way to do this
+            input_pass = pass_var.get()
+            login_result = login_system.login(self, input_name, input_pass)
+            if login_result is None:
+                incorrect_label_func()
+            else: # login and screen switch here
+                controller.show_frame(CollectionPage)
+            user_var.set("")
+            pass_var.set("")
 
-        # self.load_users() 
+        def incorrect_label_func():  # makes an 'incorrect username or password' msg appear
+            if self.incorrect_label:
+                self.incorrect_label.destroy()
+            self.incorrect_label = tk.Label(self, text ="incorrect username or password", fg="red")
+            self.incorrect_label.grid(row=5, column=1, padx=10, pady=10)
 
     login_system = login_system()
 
-    # need a function to display releases in a main collection screen
-
-    # need a function to display specific release info if you click into it from collection screen
-
-    # need a function to display artists and select following
-
-    # need a function to display and edit reviews
-
-    # need a function that runs an 'add something' screen to get input new music/artists/both
-
-    def incorrect_label_func(self): # trying to make an 'incorrect input' message appear in the gui
-        if self.incorrect_label:
-            self.incorrect_label.destroy()
-        self.incorrect_label = tk.Label(self.pane, text = "incorrect username or password", fg="red")
-        self.incorrect_label.pack(side=TOP)
-
-    def sign_in_user(self):
-        input_name = self.user_var.get() # i think this is probably the nicest way to do this
-        input_pass = self.pass_var.get()
-        login_result = login_system.login(self, input_name, input_pass) # this works yes
-        if login_result is None:
-            self.incorrect_label_func()
-        self.user_var.set("")
-        self.pass_var.set("")
-        # need to return user ID to load pages for the correct user
 
 
-    def sign_up_user(self): # this will need some commit and load stuff here as well as the execute from login_system
-        new_name = self.user_var.get()
-        new_pass = self.pass_var.get()
-        login_system.register(self, new_name, new_pass)
-        login_system.add_to_users(self)
-        self.user_var.set("")
-        self.pass_var.set("")
-        self.load_users() # refresh table for testing
+class CollectionPage(tk.Frame):
+    def __init__(self, parent, controller):
+        tk.Frame.__init__(self, parent)
+        label = ttk.Label(self, text="Page 1", font=LARGE_FONT)
+        label.grid(row=0, column=4, padx=10, pady=10)
 
-    
-    def load_users(self): # to make logging in easy for development
-        self.user_listbox.delete(0, tk.END)
-        self.pass_listbox.delete(0, tk.END)
-        self.cursor.execute("SELECT * FROM users")
-        users = self.cursor.fetchall()
-        for row in users:
-            # self.user_listbox.insert(tk.END, row[0]) # want to display these with relavant field names and not one afer the others as they are now
-            self.user_listbox.insert(tk.END, row[1])
-            self.pass_listbox.insert(tk.END, row[2])
-        
-    # users should only be able to delete data that is theirs while logged in
-    # # so this needs to change
-    def delete_table_value(self): 
-        pass
-        selected_user = self.user_listbox.get(tk.ACTIVE)
-        if selected_user:
-            self.cursor.execute("DELETE FROM users WHERE user=?", (selected_user,))
-            self.conn.commit()
-            self.load_table()
-        else:
-            messagebox.showwarning("Warning", "Please select a user to delete.")
+        # button to show frame 2 with text
+        # layout2
+        button1 = ttk.Button(self, text="StartPage",
+                             command=lambda: controller.show_frame(StartPage))
 
-    def __del__(self):
-        # maybe i need this
-        self.conn.close()
+        # putting the button in its place
+        # by using grid
+        button1.grid(row=1, column=1, padx=10, pady=10)
 
 
-if __name__ == "__main__":
-    root = tk.Tk()
-    root.geometry("400x200")
-    app = DatabaseApp(root)
-    root.mainloop()
+
+# class WIP(tk.Frame): # all messy
+#     # need a function to display releases in a main collection screen
+#     def display_collection(self, root, userID):
+#         self.userID = userID
+#         self.root = root
+#         self.root.title("collection viewer")
+#
+#         self.conn = sqlite3.connect("MusicDB.db") # connect to db
+#         self.cursor = self.conn.cursor()
+#
+#         self.cursor.execute("SELECT * FROM user_releases WHERE userID = ?", (self.userID,))
+#         rows = self.cursor.fetchall()
+#         print(rows)
+#
+#
+#     # need a function to display specific release info if you click into it from collection screen
+#
+#     # need a function to display artists and select following
+#
+#     # need a function to display and edit reviews
+#
+#     # need a function that runs an 'add something' screen to get input new music/artists/both
+#
+#
+#
+#     def sign_up_user(self): # this will need some commit and load stuff here as well as the execute from login_system
+#         new_name = self.user_var.get()
+#         new_pass = self.pass_var.get()
+#         login_system.register(self, new_name, new_pass)
+#         login_system.add_to_users(self)
+#         self.user_var.set("")
+#         self.pass_var.set("")
+#         self.load_users() # refresh table for testing
+#
+#
+#     def load_users(self): # just displays usernames and passwords to make dev easy
+#         self.user_listbox.delete(0, tk.END)
+#         self.pass_listbox.delete(0, tk.END)
+#         self.cursor.execute("SELECT * FROM users")
+#         users = self.cursor.fetchall()
+#         for row in users:
+#             self.user_listbox.insert(tk.END, row[1])
+#             self.pass_listbox.insert(tk.END, row[2])
+#
+#     # users should only be able to delete data that is theirs while logged in
+#     # # so this needs to change
+#     def delete_table_value(self):
+#         pass
+#         selected_user = self.user_listbox.get(tk.ACTIVE)
+#         if selected_user:
+#             self.cursor.execute("DELETE FROM users WHERE user=?", (selected_user,))
+#             self.conn.commit()
+#             self.load_table()
+#         else:
+#             messagebox.showwarning("Warning", "Please select a user to delete.")
+#
+#     def __del__(self):
+#         # maybe i need this
+#         self.conn.close()
+#
+
+
+app = DatabaseApp()
+app.mainloop()

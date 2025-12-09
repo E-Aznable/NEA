@@ -8,7 +8,7 @@ import json
 data_response = []
 
 # need to take an input from another file
-artist_name = "castle rat" # placeholder
+artist_name = "pink floyd" # placeholder
 encoded = urllib.parse.quote(artist_name)
 print(encoded)
 
