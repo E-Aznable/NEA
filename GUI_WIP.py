@@ -7,8 +7,48 @@ import sqlite3
 from login import * # import login system
 from tkinter import ttk
 from tkinter import *
+from PIL import ImageTk, Image # pillow package manages display of images from URLs
+import requests
+from io import BytesIO
 
-LARGE_FONT = ("Verdana", 12)
+LARGE_FONT = ("Verdana", 16)
+
+
+import requests
+from PIL import Image, ImageTk
+from io import BytesIO
+
+
+class WebImage:
+    def __init__(self, url):
+        try:
+            # Set the headers to simulate a browser request
+            headers = {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36" # fake ass browser request lol
+            }
+
+            # Send the GET request with the User-Agent header
+            u = requests.get(url, headers=headers, stream=True)
+            u.raise_for_status()  # Will raise an exception for 4xx/5xx status codes
+
+            # Check if the content is an image (by looking at the Content-Type header)
+            if 'image' not in u.headers['Content-Type']:
+                raise ValueError("URL does not point to a valid image")
+
+            # Try to open the image
+            self.image = ImageTk.PhotoImage(Image.open(BytesIO(u.content)))
+        except requests.exceptions.RequestException as e:
+            print(f"Error downloading image: {e}")
+            self.image = None
+        except ValueError as e:
+            print(f"Error: {e}")
+            self.image = None
+        except Exception as e:
+            print(f"Error loading image: {e}")
+            self.image = None
+
+    def get(self):
+        return self.image # return image for actual use
 
 
 class DatabaseApp(tk.Tk):
@@ -64,7 +104,7 @@ class StartPage(tk.Frame):
 
         # Create a database or connect to an existing one
         conn = sqlite3.connect("MusicDB.db") # using our db
-        cursor = conn.cursor()
+        cursor = conn.cursor() # just in case
 
         # Create GUI elements
         user_var=tk.StringVar() # set username as a string var for input later
@@ -101,24 +141,63 @@ class StartPage(tk.Frame):
             self.incorrect_label = tk.Label(self, text ="incorrect username or password", fg="red")
             self.incorrect_label.grid(row=5, column=2, padx=10, pady=10)
 
-    login_system = login_system()
+        # controller.bind("<Return>", sign_in_user()) # keyboard shortcut to make enter key sign in, not working IDK I'll do it later
 
+    login_system = login_system()
 
 
 class CollectionPage(tk.Frame):
     def __init__(self, parent, controller):
         tk.Frame.__init__(self, parent)
-        label = ttk.Label(self, text="Page 1", font=LARGE_FONT)
-        label.grid(row=0, column=4, padx=10, pady=10)
+        label = ttk.Label(self, text="collection", font=LARGE_FONT)
+        label.grid(row=0, column=1, padx=10, pady=10)
 
         # button to show frame 2 with text
         # layout2
-        button1 = ttk.Button(self, text="login page",
-                             command=lambda: controller.show_frame(StartPage))
+        button1 = ttk.Button(self, text="login page", command=lambda: controller.show_frame(StartPage))
 
         # putting the button in its place
         # by using grid
         button1.grid(row=1, column=1, padx=10, pady=10)
+
+        conn = sqlite3.connect("MusicDB.db") # IMPORTANT! IMPORTANT! This needs to display the user_releases table of whoever is actually logged in, not just all releases, make that happen!
+        cursor = conn.cursor()
+        cursor.execute("""SELECT releases.ReleaseName, artists.ArtistName, releases.ReleaseImage
+                        FROM releases
+                        INNER JOIN artists ON releases.ArtistID = artists.ArtistID""") # SQL query for release names, art and artist names
+        i = 0
+        for release in cursor:
+            for j in range(len(release)-1): # only two columns but cleanly loops through all rows and those two useful columns
+                e = Entry(self, fg='blue')
+                e.grid(row=j+2, column=i)
+                e.insert(END, release[j])
+
+            # Create a WebImage instance and store it in the frame
+            web_image = WebImage(release[2]) #  I'm pretty sure this is the nicest way to get the image, be careful if you add more return fields though!
+            self.image = web_image.get()  # Store the image in the frame
+            imagelab = ttk.Label(self, image=self.image)  # Use the stored image
+            imagelab.grid(row=5, column=i)  # Display the image
+
+            i = i + 1
+            if i > 5:
+                i = 0
+
+
+
+
+class ReleaseFocusPage(tk.Frame):
+    def __init__(self, parent, controller):
+        tk.Frame.__init__(self, parent)
+
+
+class ReviewPage(tk.Frame):
+    def __init__(self, parent, controller):
+        tk.Frame.__init__(self, parent)
+
+
+class ArtistsPage(tk.Frame):
+    def __init__(self, parent, controller):
+        tk.Frame.__init__(self, parent)
 
 
 

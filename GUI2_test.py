@@ -1,129 +1,168 @@
+import sqlite3
 import tkinter as tk
+import sqlite3
+from login import * # import login system
 from tkinter import ttk
+from tkinter import *
+from PIL import ImageTk, Image # pillow package manages display of images from URLs
+import requests
+from io import BytesIO
 
-LARGEFONT = ("Verdana", 35)
+class WebImage: # this is to manage album art, band images, etc
+    def __init__(self, url):
+        u = requests.get(url)
+        self.image = ImageTk.PhotoImage(Image.open(BytesIO(u.content)))
 
-
-class tkinterApp(tk.Tk):
-
-    # __init__ function for class tkinterApp
-    def __init__(self, *args, **kwargs):
-        # __init__ function for class Tk
-        tk.Tk.__init__(self, *args, **kwargs)
-
-        # creating a container
-        container = tk.Frame(self)
-        container.pack(side="top", fill="both", expand=True)
-
-        container.grid_rowconfigure(0, weight=1)
-        container.grid_columnconfigure(0, weight=1)
-
-        # initializing frames to an empty array
-        self.frames = {}
-
-        # iterating through a tuple consisting
-        # of the different page layouts
-        for F in (StartPage, Page1, Page2):
-            frame = F(container, self)
-
-            # initializing frame of that object from
-            # startpage, page1, page2 respectively with
-            # for loop
-            self.frames[F] = frame
-
-            frame.grid(row=0, column=0, sticky="nsew")
-
-        self.show_frame(StartPage)
-
-    # to display the current frame passed as
-    # parameter
-    def show_frame(self, cont):
-        frame = self.frames[cont]
-        frame.tkraise()
+    def get(self):
+        return self.image
 
 
-# first window frame startpage
+# import tkinter as tk
+# from tkinter import ttk
+#
+# LARGEFONT = ("Verdana", 35)
+#
+#
+# class tkinterApp(tk.Tk):
+#
+#     # __init__ function for class tkinterApp
+#     def __init__(self, *args, **kwargs):
+#         # __init__ function for class Tk
+#         tk.Tk.__init__(self, *args, **kwargs)
+#
+#         # creating a container
+#         container = tk.Frame(self)
+#         container.pack(side="top", fill="both", expand=True)
+#
+#         container.grid_rowconfigure(0, weight=1)
+#         container.grid_columnconfigure(0, weight=1)
+#
+#         # initializing frames to an empty array
+#         self.frames = {}
+#
+#         # iterating through a tuple consisting
+#         # of the different page layouts
+#         for F in (StartPage, Page1, Page2):
+#             frame = F(container, self)
+#
+#             # initializing frame of that object from
+#             # startpage, page1, page2 respectively with
+#             # for loop
+#             self.frames[F] = frame
+#
+#             frame.grid(row=0, column=0, sticky="nsew")
+#
+#         self.show_frame(StartPage)
+#
+#     # to display the current frame passed as
+#     # parameter
+#     def show_frame(self, cont):
+#         frame = self.frames[cont]
+#         frame.tkraise()
+#
+#
+# # first window frame startpage
+#
+# class StartPage(tk.Frame):
+#     def __init__(self, parent, controller):
+#         tk.Frame.__init__(self, parent)
+#
+#         # label of frame Layout 2
+#         label = ttk.Label(self, text="Startpage", font=LARGEFONT)
+#
+#         # putting the grid in its place by using
+#         # grid
+#         label.grid(row=0, column=4, padx=10, pady=10)
+#
+#         button1 = ttk.Button(self, text="Page 1",
+#                              command=lambda: controller.show_frame(Page1))
+#
+#         # putting the button in its place by
+#         # using grid
+#         button1.grid(row=1, column=1, padx=10, pady=10)
+#
+#         ## button to show frame 2 with text layout2
+#         button2 = ttk.Button(self, text="Page 2",
+#                              command=lambda: controller.show_frame(Page2))
+#
+#         # putting the button in its place by
+#         # using grid
+#         button2.grid(row=2, column=1, padx=10, pady=10)
+#
+#
+# # second window frame page1
+# class Page1(tk.Frame):
+#
+#     def __init__(self, parent, controller):
+#         tk.Frame.__init__(self, parent)
+#         label = ttk.Label(self, text="Page 1", font=LARGEFONT)
+#         label.grid(row=0, column=4, padx=10, pady=10)
+#
+#         # button to show frame 2 with text
+#         # layout2
+#         button1 = ttk.Button(self, text="StartPage",
+#                              command=lambda: controller.show_frame(StartPage))
+#
+#         # putting the button in its place
+#         # by using grid
+#         button1.grid(row=1, column=1, padx=10, pady=10)
+#
+#         # button to show frame 2 with text
+#         # layout2
+#         button2 = ttk.Button(self, text="Page 2",
+#                              command=lambda: controller.show_frame(Page2))
+#
+#         # putting the button in its place by
+#         # using grid
+#         button2.grid(row=2, column=1, padx=10, pady=10)
+#
+#
+# # third window frame page2
+# class Page2(tk.Frame):
+#     def __init__(self, parent, controller):
+#         tk.Frame.__init__(self, parent)
+#         label = ttk.Label(self, text="Page 2", font=LARGEFONT)
+#         label.grid(row=0, column=4, padx=10, pady=10)
+#
+#         # button to show frame 2 with text
+#         # layout2
+#         button1 = ttk.Button(self, text="Page 1",
+#                              command=lambda: controller.show_frame(Page1))
+#
+#         # putting the button in its place by
+#         # using grid
+#         button1.grid(row=1, column=1, padx=10, pady=10)
+#
+#         # button to show frame 3 with text
+#         # layout3
+#         button2 = ttk.Button(self, text="Startpage",
+#                              command=lambda: controller.show_frame(StartPage))
+#
+#         # putting the button in its place by
+#         # using grid
+#         button2.grid(row=2, column=1, padx=10, pady=10)
+#
+#
+# # Driver Code
+# app = tkinterApp()
+# app.mainloop()
 
-class StartPage(tk.Frame):
-    def __init__(self, parent, controller):
-        tk.Frame.__init__(self, parent)
+conn = sqlite3.connect("MusicDB.db") # do I need to again?
+cursor = conn.cursor()
+cursor.execute("""SELECT releases.ReleaseName, releases.ReleaseImage, artists.ArtistName
+                FROM releases
+                INNER JOIN artists ON releases.ArtistID = artists.ArtistID""") # SQL query for release names, art and artist names
+        # i = 0
+        # for release in cursor:
+        #     for j in range(len(release)):
+        #         e = Entry(self, width=10, fg='blue')
+        #         e.grid(row=i, column=j)
+        #         e.insert(END, release[j])
+        #     i = i + 1
+rows = cursor.fetchall()
+for row in rows:
+    print(row)
 
-        # label of frame Layout 2
-        label = ttk.Label(self, text="Startpage", font=LARGEFONT)
-
-        # putting the grid in its place by using
-        # grid
-        label.grid(row=0, column=4, padx=10, pady=10)
-
-        button1 = ttk.Button(self, text="Page 1",
-                             command=lambda: controller.show_frame(Page1))
-
-        # putting the button in its place by
-        # using grid
-        button1.grid(row=1, column=1, padx=10, pady=10)
-
-        ## button to show frame 2 with text layout2
-        button2 = ttk.Button(self, text="Page 2",
-                             command=lambda: controller.show_frame(Page2))
-
-        # putting the button in its place by
-        # using grid
-        button2.grid(row=2, column=1, padx=10, pady=10)
-
-
-# second window frame page1
-class Page1(tk.Frame):
-
-    def __init__(self, parent, controller):
-        tk.Frame.__init__(self, parent)
-        label = ttk.Label(self, text="Page 1", font=LARGEFONT)
-        label.grid(row=0, column=4, padx=10, pady=10)
-
-        # button to show frame 2 with text
-        # layout2
-        button1 = ttk.Button(self, text="StartPage",
-                             command=lambda: controller.show_frame(StartPage))
-
-        # putting the button in its place
-        # by using grid
-        button1.grid(row=1, column=1, padx=10, pady=10)
-
-        # button to show frame 2 with text
-        # layout2
-        button2 = ttk.Button(self, text="Page 2",
-                             command=lambda: controller.show_frame(Page2))
-
-        # putting the button in its place by
-        # using grid
-        button2.grid(row=2, column=1, padx=10, pady=10)
-
-
-# third window frame page2
-class Page2(tk.Frame):
-    def __init__(self, parent, controller):
-        tk.Frame.__init__(self, parent)
-        label = ttk.Label(self, text="Page 2", font=LARGEFONT)
-        label.grid(row=0, column=4, padx=10, pady=10)
-
-        # button to show frame 2 with text
-        # layout2
-        button1 = ttk.Button(self, text="Page 1",
-                             command=lambda: controller.show_frame(Page1))
-
-        # putting the button in its place by
-        # using grid
-        button1.grid(row=1, column=1, padx=10, pady=10)
-
-        # button to show frame 3 with text
-        # layout3
-        button2 = ttk.Button(self, text="Startpage",
-                             command=lambda: controller.show_frame(StartPage))
-
-        # putting the button in its place by
-        # using grid
-        button2.grid(row=2, column=1, padx=10, pady=10)
-
-
-# Driver Code
-app = tkinterApp()
-app.mainloop()
+img = WebImage('https://i.discogs.com/oHPDj8NWtkGhq7kSCJuJ4pEnThoYx3JgU9kcDyvbeKo/rs:fit/g:sm/q:90/h:609/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTE4NzMw/MTMtMTcyNzc2NDkx/OS04NTI3LmpwZWc.jpeg').get()
+imagelab = Label(self, image=img)
+imagelab.grid(row=j+2, column=i)
