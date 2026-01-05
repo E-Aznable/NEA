@@ -55,10 +55,10 @@ if (main_release_id == None):
             main_release_id = str(data_response["releases"][i]["main_release"])
 
         latest_discog_id = str(data_response["releases"][i]["id"])
-        print(latest_discogs_id)
+        print(latest_discog_id)
 
         latest_release_name = (data_response["releases"][i]["title"]).lower()
-        print(latst_release_name)
+        print(latest_release_name)
         break
 else:
     print("SUCCESS: should be all good")

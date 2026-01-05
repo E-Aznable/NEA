@@ -56,6 +56,8 @@ class DatabaseApp(tk.Tk):
         # initializes tk functions, creates frames, containers and iterates through page layouts
         tk.Tk.__init__(self, *args, **kwargs)
 
+        self.login_result = None
+
         container = tk.Frame(self)
         container.pack(side="top", fill="both", expand=True)
 
@@ -85,6 +87,9 @@ class DatabaseApp(tk.Tk):
     def show_frame(self, cont):
         frame = self.frames[cont]
         frame.tkraise()
+
+    def set_login_result(self, result):
+        self.login_result = result  # Store the login result here for global access
 
 
 class StartPage(tk.Frame):
@@ -132,6 +137,8 @@ class StartPage(tk.Frame):
                 incorrect_label_func()
             else: # login and screen switch here
                 controller.show_frame(CollectionPage)
+                controller.set_login_result(login_result) # set the login result
+
             user_var.set("")
             pass_var.set("")
 
@@ -154,40 +161,51 @@ class CollectionPage(tk.Frame):
 
         # button to show frame 2 with text
         # layout2
-        button1 = ttk.Button(self, text="login page", command=lambda: controller.show_frame(StartPage))
+        button1 = ttk.Button(self, text="back to login", command=lambda: [controller.show_frame(StartPage), controller.show_frame(ReleaseFocusPage)])
 
         # putting the button in its place
         # by using grid
         button1.grid(row=1, column=1, padx=10, pady=10)
+
+        current_user_id = controller.login_result
+        print(current_user_id)
 
         conn = sqlite3.connect("MusicDB.db") # IMPORTANT! IMPORTANT! This needs to display the user_releases table of whoever is actually logged in, not just all releases, make that happen!
         cursor = conn.cursor()
         cursor.execute("""SELECT releases.ReleaseName, artists.ArtistName, releases.ReleaseImage
                         FROM releases
                         INNER JOIN artists ON releases.ArtistID = artists.ArtistID""") # SQL query for release names, art and artist names
-        i = 0
+        i = 1
+        j = 2
         for release in cursor:
-            for j in range(len(release)-1): # only two columns but cleanly loops through all rows and those two useful columns
-                e = Entry(self, fg='blue')
-                e.grid(row=j+2, column=i)
-                e.insert(END, release[j])
+            release_grouped = ttk.LabelFrame(self, text=f"{release[0]} - {release[1]}") # contain a release in an individual box that can be clicked (hopefully)
+            release_grouped.grid(row=j, column=i, padx=10, pady=10)
 
             # Create a WebImage instance and store it in the frame
             web_image = WebImage(release[2]) #  I'm pretty sure this is the nicest way to get the image, be careful if you add more return fields though!
-            self.image = web_image.get()  # Store the image in the frame
-            imagelab = ttk.Label(self, image=self.image)  # Use the stored image
-            imagelab.grid(row=5, column=i)  # Display the image
+            img = web_image.get()  # Store the image in the frame
+            imagelab = ttk.Label(release_grouped, image=img)  # Use the stored image
+            imagelab.grid(row=0, column=0)  # Display the image
+            imagelab.image = img # Store the image reference in the label to prevent garbage collection - weird solution but idk what else
 
-            i = i + 1
+            i+=1
             if i > 5:
                 i = 0
-
-
+                j += 1
 
 
 class ReleaseFocusPage(tk.Frame):
     def __init__(self, parent, controller):
         tk.Frame.__init__(self, parent)
+        label = ttk.Label(self, text="focus", font=LARGE_FONT)
+        label.grid(row=0, column=1, padx=10, pady=10)
+
+        back_button = ttk.Button(self, text="back", command=lambda: controller.show_frame(CollectionPage))
+        back_button.grid(row=1, column=1, padx=10, pady=10)
+
+        conn = sqlite3.connect("MusicDB.db")
+        cursor = conn.cursor()
+
 
 
 class ReviewPage(tk.Frame):
@@ -198,6 +216,9 @@ class ReviewPage(tk.Frame):
 class ArtistsPage(tk.Frame):
     def __init__(self, parent, controller):
         tk.Frame.__init__(self, parent)
+
+
+# class for AddRelease page?
 
 
 

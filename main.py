@@ -2,6 +2,10 @@
 # runs other files
 # creates tables if none present
 
+
+# HUGE apologies for my mixing of camelcase and whatever the other one is called, it took me ages to notice and is way too much effort to make everything just one now
+
+
 import urllib.parse
 import urllib.request
 import json
@@ -27,22 +31,22 @@ if not exists_check:
                             (ArtistID INTEGER PRIMARY KEY AUTOINCREMENT, 
                             ArtistName varchar(255) NOT NULL,
                             DiscogsArtistID INTEGER NOT NULL,
-                            ArtistImage varchar(255))""")
+                            ArtistImage varchar(255) NOT NULL)""")
             cursor.execute("""INSERT INTO artists (ArtistName, DiscogsArtistID, ArtistImage)
-                            VALUES ('pink floyd', 45467, 'https://i.discogs.com/L3xODvccXCrOv8yQ717EIfcw52brkl4GlTv6rkGVAXo/rs:fit/g:sm/q:90/h:397/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9BLTQ1NDY3/LTE0MDU1OTMzMDIt/ODYzMy5qcGVn.jpeg')""") # placeholder
+                            VALUES ('FAKE pink floyd', 694204546769420, 'https://i.discogs.com/L3xODvccXCrOv8yQ717EIfcw52brkl4GlTv6rkGVAXo/rs:fit/g:sm/q:90/h:397/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9BLTQ1NDY3/LTE0MDU1OTMzMDIt/ODYzMy5qcGVn.jpeg')""") # placeholder
 
             cursor.execute("""CREATE TABLE releases
                             (ReleaseID INTEGER PRIMARY KEY AUTOINCREMENT, 
                             ReleaseName varchar(255) NOT NULL,
-                            ReleaseImage varchar(255),
+                            ReleaseImage varchar(255) NOT NULL,
                             ArtistID INTEGER NOT NULL,
                             DiscogsReleaseID INTEGER NOT NULL,
                             FOREIGN KEY(ArtistID) REFERENCES artists(ArtistID))""")
             # might need to get master id from discogs, may still call it DiscogsReleaseID in here for clarity though
             cursor.execute("""INSERT INTO releases (ReleaseName, ArtistID, DiscogsReleaseID, ReleaseImage)
-                            VALUES ('dark side of the moon', 1, 10362, 'https://i.discogs.com/oHPDj8NWtkGhq7kSCJuJ4pEnThoYx3JgU9kcDyvbeKo/rs:fit/g:sm/q:90/h:609/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTE4NzMw/MTMtMTcyNzc2NDkx/OS04NTI3LmpwZWc.jpeg')""") # placeholder
+                            VALUES ('FAKE dark side of the moon', 1, 694201036269420, 'https://i.discogs.com/oHPDj8NWtkGhq7kSCJuJ4pEnThoYx3JgU9kcDyvbeKo/rs:fit/g:sm/q:90/h:609/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTE4NzMw/MTMtMTcyNzc2NDkx/OS04NTI3LmpwZWc.jpeg')""") # placeholder
 
-            # need secondary user versions of releases and artists to deal with many to many relations
+            # need secondary user versions of releases and artists to deal with many-to-many relations
             cursor.execute("""CREATE TABLE user_artists
                             (user_artistID INTEGER PRIMARY KEY AUTOINCREMENT,
                             UserID INTEGER NOT NULL,
@@ -59,6 +63,16 @@ if not exists_check:
                             FOREIGN KEY(UserID) REFERENCES users(UserID))""")
             cursor.execute("""INSERT INTO user_releases (UserID, ReleaseID)
                             VALUES (1, 1)""")
+
+            # tracks table for tracks duh
+            cursor.execute("""CREATE TABLE tracks
+                            (TrackID INTEGER PRIMARY KEY AUTOINCREMENT,
+                            TrackName varchar(255) NOT NULL,
+                            TrackNum INTEGER,
+                            ReleaseID INTEGER,
+                            FOREIGN KEY(ReleaseID) REFERENCES releases(ReleaseID))""")
+            cursor.execute("""INSERT INTO tracks (TrackName, TrackNum, ReleaseID)
+                            VALUES ('just one lol - eclipse', 10, 1)""")
 
             conn.commit()
 

@@ -1,6 +1,8 @@
 # take an artist name and return their discogs ID and thumbnail address
 # it should double-check if the artist is already in the table though
 
+# semi redundant now
+
 import urllib.parse
 import urllib.request
 import json
@@ -11,10 +13,6 @@ data_response = []
 artist_name = "pink floyd" # placeholder
 encoded = urllib.parse.quote(artist_name)
 print(encoded)
-
-# this is not very important but it's nice
-# user_agent = "personal music manager"
-# actually kind of unnecessary
 
 # Construct the API URL
 # Construct the Discogs API URL using consumer key and secret for authentication
@@ -40,5 +38,5 @@ print("Discogs API response:", data_response)
 artist_id = data_response["results"][0]["id"]
 print(artist_id)
 
-image_url = data_response["results"][0]["cover_image"]
-print(image_url)
+artist_image_url = data_response["results"][0]["cover_image"]
+print(artist_image_url)

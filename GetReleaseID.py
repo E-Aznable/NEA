@@ -1,5 +1,7 @@
 # this takes an album name and artist name to give us a release ID and other useful stuff
 
+# semi redundant now
+
 import urllib.parse
 import urllib.request
 import json
@@ -13,9 +15,6 @@ print(encoded_artist)
 
 release_name = "dark side of the moon" # placeholder
 encoded_release = urllib.parse.quote(release_name)
-
-# this is not very important but it's nice
-user_agent = "personal music manager"
 
 # Construct the API URL
 # Construct the Discogs API URL using consumer key and secret for authentication
@@ -41,6 +40,6 @@ print("Discogs API response:", data_response)
 master_id = data_response["results"][0]["master_id"]
 print(master_id)
 
-cover_image_url = data_response["results"][0]["cover_image"]
-print(cover_image_url)
+release_image_url = data_response["results"][0]["cover_image"]
+print(release_image_url)
 # this whole way of searching is only mostly accurate, I don't think if there's a way to make it better either
