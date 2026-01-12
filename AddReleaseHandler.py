@@ -56,7 +56,7 @@ def AddArtist(artist_name, user_id): # artist func
         print("Failed to open database:", e)
 
 
-def Addrelease(release_name, artist_name, user_id): # release + tracks func
+def Addrelease(artist_name, release_name, user_id): # release + tracks func
     encoded_artist = urllib.parse.quote(artist_name)
     encoded_release = urllib.parse.quote(release_name)
 

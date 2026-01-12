@@ -1,6 +1,6 @@
 # this should be one of the bigger files that calls all the others
 
-# NEED A MAJOR REFACTOR TO ACCOMMODATE MULTIPLE PAGES!!!!
+# NEED A MAJOR REFACTOR TO ACCOMMODATE MULTIPLE PAGES!!!! halfway done now
 
 import tkinter as tk
 import sqlite3
@@ -11,31 +11,25 @@ from PIL import ImageTk, Image # pillow package manages display of images from U
 import requests
 from io import BytesIO
 
-LARGE_FONT = ("Verdana", 16)
-
-
-import requests
-from PIL import Image, ImageTk
-from io import BytesIO
-
+LARGE_FONT = ("Verdana", 16) # this is a fun way to do a global BIG FONT but I might change it
 
 class WebImage:
     def __init__(self, url):
         try:
-            # Set the headers to simulate a browser request
+            # set the headers to simulate a browser request
             headers = {
                 "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36" # fake ass browser request lol
             }
 
-            # Send the GET request with the User-Agent header
+            # send the GET request with the user agent header
             u = requests.get(url, headers=headers, stream=True)
-            u.raise_for_status()  # Will raise an exception for 4xx/5xx status codes
+            u.raise_for_status()  # raise an exception for 4xx/5xx status codes
 
-            # Check if the content is an image (by looking at the Content-Type header)
+            # check if the content is an image (by looking at the content type header)
             if 'image' not in u.headers['Content-Type']:
                 raise ValueError("URL does not point to a valid image")
 
-            # Try to open the image
+            # open the image
             self.image = ImageTk.PhotoImage(Image.open(BytesIO(u.content)))
         except requests.exceptions.RequestException as e:
             print(f"Error downloading image: {e}")
@@ -89,7 +83,7 @@ class DatabaseApp(tk.Tk):
         frame.tkraise()
 
     def set_login_result(self, result):
-        self.login_result = result  # Store the login result here for global access
+        self.login_result = result  # store login result here for global access
 
 
 class StartPage(tk.Frame):
@@ -107,11 +101,11 @@ class StartPage(tk.Frame):
         # button1 = ttk.Button(self, text="Page 1", command=lambda: controller.show_frame(CollectionPage))
         # button1.grid(row=1, column=1, padx=10, pady=10)
 
-        # Create a database or connect to an existing one
+        # create a database or connect to an existing one
         conn = sqlite3.connect("MusicDB.db") # using our db
         cursor = conn.cursor() # just in case
 
-        # Create GUI elements
+        # create GUI elements
         user_var=tk.StringVar() # set username as a string var for input later
         user_label = tk.Label(self, text="username:")
         user_label.grid(row=2, column=1, padx=10, pady=10)
@@ -161,7 +155,7 @@ class CollectionPage(tk.Frame):
 
         # button to show frame 2 with text
         # layout2
-        button1 = ttk.Button(self, text="back to login", command=lambda: [controller.show_frame(StartPage), controller.show_frame(ReleaseFocusPage)])
+        button1 = ttk.Button(self, text="back to login", command=lambda: [controller.show_frame(StartPage), controller.show_frame(ReleaseFocusPage)]) # i think this was for testing and should be changed back
 
         # putting the button in its place
         # by using grid
@@ -178,18 +172,18 @@ class CollectionPage(tk.Frame):
         i = 1
         j = 2
         for release in cursor:
-            release_grouped = ttk.LabelFrame(self, text=f"{release[0]} - {release[1]}") # contain a release in an individual box that can be clicked (hopefully)
+            release_grouped = ttk.LabelFrame(self, text=f"{release[0]} - {release[1]}") # contain a release in an individual box that can be made clickable (hopefully)
             release_grouped.grid(row=j, column=i, padx=10, pady=10)
 
-            # Create a WebImage instance and store it in the frame
+            # use webimage class
             web_image = WebImage(release[2]) #  I'm pretty sure this is the nicest way to get the image, be careful if you add more return fields though!
-            img = web_image.get()  # Store the image in the frame
-            imagelab = ttk.Label(release_grouped, image=img)  # Use the stored image
-            imagelab.grid(row=0, column=0)  # Display the image
-            imagelab.image = img # Store the image reference in the label to prevent garbage collection - weird solution but idk what else
+            img = web_image.get() # return the img to be used
+            imagelab = ttk.Label(release_grouped, image=img) # stick the image in the release group frame
+            imagelab.grid(row=0, column=0)
+            imagelab.image = img # store the image reference in the label so its displayed and not trashed
 
             i+=1
-            if i > 5:
+            if i > 5: # count up to 5 images in a row before a new row is started
                 i = 0
                 j += 1
 
@@ -205,7 +199,6 @@ class ReleaseFocusPage(tk.Frame):
 
         conn = sqlite3.connect("MusicDB.db")
         cursor = conn.cursor()
-
 
 
 class ReviewPage(tk.Frame):
