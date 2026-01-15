@@ -153,12 +153,9 @@ class CollectionPage(tk.Frame):
         label = ttk.Label(self, text="collection", font=LARGE_FONT)
         label.grid(row=0, column=1, padx=10, pady=10)
 
-        # button to show frame 2 with text
-        # layout2
-        button1 = ttk.Button(self, text="back to login", command=lambda: [controller.show_frame(StartPage), controller.show_frame(ReleaseFocusPage)]) # i think this was for testing and should be changed back
+        # buttons
+        button1 = ttk.Button(self, text="back to login", command=lambda: controller.show_frame(StartPage))
 
-        # putting the button in its place
-        # by using grid
         button1.grid(row=1, column=1, padx=10, pady=10)
 
         current_user_id = controller.login_result
@@ -186,6 +183,48 @@ class CollectionPage(tk.Frame):
             if i > 5: # count up to 5 images in a row before a new row is started
                 i = 0
                 j += 1
+
+        # going to put the 'add new release' thing as a popup in here for now
+        #Define a function to close the popup window
+        def close_popup(top):
+            top.destroy()
+        def insert_release_name(val):
+            val.insert(0, "enter release name here")
+        def insert_artist_name(val):
+            val.insert(0, "enter artist name here")
+
+        #Define a function to open the Popup Dialogue
+        def popupwin():
+            #Create a Toplevel window
+            top = Toplevel(self)
+            top.geometry("750x250")
+
+            #Create an Entry Widget in the Toplevel window
+            artist_var=tk.StringVar()
+            artist_label = tk.Label(self, text="artist name:")
+            artist_label.grid(row=2, column=1, padx=10, pady=10)
+            artist_entry = tk.Entry(self, textvariable = artist_var)
+            artist_entry.grid(row=2, column=2, padx=10, pady=10)
+
+            release_var=tk.StringVar()
+            release_label = tk.Label(self, text="release name:")
+            release_label.grid(row=2, column=1, padx=10, pady=10)
+            release_entry = tk.Entry(self, textvariable = release_var)
+            release_entry.grid(row=2, column=2, padx=10, pady=10)
+
+            #Create a Button to print something in the Entry widget
+            popup_insert_button = ttk.Button(self,text="Insert", command= lambda:insert_artist_name(entry)) # EDITING THIS RIGHT NOW DON@T FORGERT
+            popup_insert_button.grid(row=1, column=0)
+            #Create a Button Widget in the Toplevel Window
+            popup_close_button = ttk.Button(self, text="Ok", command=lambda:close_popup(top))
+            popup_close_button.grid(row=1, column=2)
+        #Create a Label
+        label= ttk.Label(self, text="Click the Button to Open the Popup Dialogue")
+        label.grid(row=0, column=0)
+
+        #Create a Button
+        button= ttk.Button(self, text= "Click Me!", command=popupwin)
+        button.grid(row=0, column=2)
 
 
 class ReleaseFocusPage(tk.Frame):
