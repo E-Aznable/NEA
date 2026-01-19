@@ -48,7 +48,15 @@ def AddArtist(artist_name, user_id): # artist func
                 return False
             else: # if data isn't there, add it
                 cursor.execute(f"""INSERT INTO artists (ArtistName, DiscogsArtistID, ArtistImage)
-                                VALUES ('{artist_name}', {artist_id}, '{artist_image_url}')""")
+                                VALUES ('{artist_name}', {artist_id}, '{artist_image_url}')""") # this is the DISCOGS ARTIST ID
+                cursor.execute(f"""SELECT ArtistID
+                                                FROM artists
+                                                WHERE ArtistName = '{artist_name}'""")
+                artist_id_result_tuple = cursor.fetchone()
+                artist_id_result = artist_id_result_tuple[0]
+                print(f"DEBUG 1:{artist_id_result}")
+                cursor.execute(f"""INSERT INTO user_artists (UserID, ArtistID)
+                                                VALUES ({user_id}, {artist_id_result})""") # this is the TABLE KEY ARTIST ID 
                 conn.commit()
                 print("data added successfully!")
                 return True
@@ -56,7 +64,7 @@ def AddArtist(artist_name, user_id): # artist func
         print("Failed to open database:", e)
 
 
-def Addrelease(artist_name, release_name, user_id): # release + tracks func
+def AddRelease(artist_name, release_name, user_id): # release + tracks func
     encoded_artist = urllib.parse.quote(artist_name)
     encoded_release = urllib.parse.quote(release_name)
 
@@ -81,7 +89,7 @@ def Addrelease(artist_name, release_name, user_id): # release + tracks func
     except urllib.error.URLError as e:
         print("urllib error:", e)
 
-    print("Discogs API response - tracklist:", tracks_data_response)
+    # print("Discogs API response - tracklist:", tracks_data_response)
 
     tracklist = []
     for i in range(len(tracks_data_response["tracklist"])):
@@ -105,11 +113,9 @@ def Addrelease(artist_name, release_name, user_id): # release + tracks func
                                                 WHERE ArtistName = '{artist_name}'""")
                 artist_id_result_tuple = cursor.fetchone()
                 artist_id_result = artist_id_result_tuple[0]
+                print(f"DEBUG 2:{artist_id_result}")
                 cursor.execute(f"""INSERT INTO releases (ReleaseName, ArtistID, DiscogsReleaseID, ReleaseImage)
                                                 VALUES ('{release_name}', {artist_id_result}, {master_id}, '{release_image_url}')""")
-
-                cursor.execute(f"""INSERT INTO user_artists (UserID, ArtistID)
-                                                VALUES ({user_id}, {artist_id_result})""")
 
                 cursor.execute(f"""SELECT ReleaseID
                                                 FROM releases
@@ -131,5 +137,4 @@ def Addrelease(artist_name, release_name, user_id): # release + tracks func
 
 def AddBoth(artist_name, release_name, user_id): # very simple to do both at once lol
     AddArtist(artist_name, user_id)
-    Addrelease(release_name, artist_name, user_id)
-
+    AddRelease(artist_name, release_name, user_id)

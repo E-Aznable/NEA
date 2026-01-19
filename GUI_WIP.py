@@ -10,6 +10,10 @@ from tkinter import *
 from PIL import ImageTk, Image # pillow package manages display of images from URLs
 import requests
 from io import BytesIO
+from AddReleaseHandler import *
+
+with open("backend.py") as backend:
+    exec(backend.read())
 
 LARGE_FONT = ("Verdana", 16) # this is a fun way to do a global BIG FONT but I might change it
 
@@ -82,7 +86,7 @@ class DatabaseApp(tk.Tk):
         frame = self.frames[cont]
         frame.tkraise()
 
-    def set_login_result(self, result):
+    def set_login_result(self, result): # user id number
         self.login_result = result  # store login result here for global access
 
 
@@ -151,80 +155,83 @@ class CollectionPage(tk.Frame):
     def __init__(self, parent, controller):
         tk.Frame.__init__(self, parent)
         label = ttk.Label(self, text="collection", font=LARGE_FONT)
-        label.grid(row=0, column=1, padx=10, pady=10)
+        label.grid(row=0, column=2, padx=10, pady=10)
 
-        # buttons
         button1 = ttk.Button(self, text="back to login", command=lambda: controller.show_frame(StartPage))
-
-        button1.grid(row=1, column=1, padx=10, pady=10)
+        button1.grid(row=0, column=1, padx=10, pady=10)
 
         current_user_id = controller.login_result
-        print(current_user_id)
 
-        conn = sqlite3.connect("MusicDB.db") # IMPORTANT! IMPORTANT! This needs to display the user_releases table of whoever is actually logged in, not just all releases, make that happen!
-        cursor = conn.cursor()
-        cursor.execute("""SELECT releases.ReleaseName, artists.ArtistName, releases.ReleaseImage
-                        FROM releases
-                        INNER JOIN artists ON releases.ArtistID = artists.ArtistID""") # SQL query for release names, art and artist names
-        i = 1
-        j = 2
-        for release in cursor:
-            release_grouped = ttk.LabelFrame(self, text=f"{release[0]} - {release[1]}") # contain a release in an individual box that can be made clickable (hopefully)
-            release_grouped.grid(row=j, column=i, padx=10, pady=10)
+        def display_database(current_user_id):
+            conn = sqlite3.connect("MusicDB.db") # IMPORTANT! IMPORTANT! This needs to display the user_releases table of whoever is actually logged in, not just all releases, make that happen!
+            cursor = conn.cursor()
+            cursor.execute("""SELECT releases.ReleaseName, artists.ArtistName, releases.ReleaseImage
+                            FROM releases
+                            INNER JOIN artists ON releases.ArtistID = artists.ArtistID""") # SQL query for release names, art and artist names
+            i = 1
+            j = 2
+            for release in cursor:
+                release_grouped = ttk.LabelFrame(self, text=f"{release[0]} - {release[1]}") # contain a release in an individual box that can be made clickable (hopefully)
+                release_grouped.grid(row=j, column=i, padx=10, pady=10)
 
-            # use webimage class
-            web_image = WebImage(release[2]) #  I'm pretty sure this is the nicest way to get the image, be careful if you add more return fields though!
-            img = web_image.get() # return the img to be used
-            imagelab = ttk.Label(release_grouped, image=img) # stick the image in the release group frame
-            imagelab.grid(row=0, column=0)
-            imagelab.image = img # store the image reference in the label so its displayed and not trashed
+                # use webimage class
+                web_image = WebImage(release[2]) #  I'm pretty sure this is the nicest way to get the image, be careful if you add more return fields though!
+                img = web_image.get() # return the img to be used
+                imagelab = ttk.Label(release_grouped, image=img) # stick the image in the release group frame
+                imagelab.grid(row=0, column=0)
+                imagelab.image = img # store the image reference in the label so its displayed and not trashed
 
-            i+=1
-            if i > 5: # count up to 5 images in a row before a new row is started
-                i = 0
-                j += 1
+                i+=1
+                if i > 5: # count up to 5 images in a row before a new row is started
+                    i = 0
+                    j += 1
+            
+        display_database(current_user_id)
+        refresh_button = ttk.Button(self, text="refresh collection", command=lambda: display_database(current_user_id))
+        refresh_button.grid(row=1, column=2, padx=10, pady=10)
 
         # going to put the 'add new release' thing as a popup in here for now
-        #Define a function to close the popup window
         def close_popup(top):
             top.destroy()
-        def insert_release_name(val):
-            val.insert(0, "enter release name here")
-        def insert_artist_name(val):
-            val.insert(0, "enter artist name here")
 
-        #Define a function to open the Popup Dialogue
         def popupwin():
-            #Create a Toplevel window
+            # Toplevel window
             top = Toplevel(self)
             top.geometry("750x250")
 
-            #Create an Entry Widget in the Toplevel window
             artist_var=tk.StringVar()
-            artist_label = tk.Label(self, text="artist name:")
+            artist_label = tk.Label(top, text="artist name:")
             artist_label.grid(row=2, column=1, padx=10, pady=10)
-            artist_entry = tk.Entry(self, textvariable = artist_var)
+            artist_entry = tk.Entry(top, textvariable = artist_var)
             artist_entry.grid(row=2, column=2, padx=10, pady=10)
 
             release_var=tk.StringVar()
-            release_label = tk.Label(self, text="release name:")
-            release_label.grid(row=2, column=1, padx=10, pady=10)
-            release_entry = tk.Entry(self, textvariable = release_var)
-            release_entry.grid(row=2, column=2, padx=10, pady=10)
+            release_label = tk.Label(top, text="release name:")
+            release_label.grid(row=3, column=1, padx=10, pady=10)
+            release_entry = tk.Entry(top, textvariable = release_var)
+            release_entry.grid(row=3, column=2, padx=10, pady=10)
 
-            #Create a Button to print something in the Entry widget
-            popup_insert_button = ttk.Button(self,text="Insert", command= lambda:insert_artist_name(entry)) # EDITING THIS RIGHT NOW DON@T FORGERT
-            popup_insert_button.grid(row=1, column=0)
-            #Create a Button Widget in the Toplevel Window
-            popup_close_button = ttk.Button(self, text="Ok", command=lambda:close_popup(top))
-            popup_close_button.grid(row=1, column=2)
-        #Create a Label
-        label= ttk.Label(self, text="Click the Button to Open the Popup Dialogue")
-        label.grid(row=0, column=0)
+            def get_inputs():
+                self.input_artist = artist_var.get()
+                self.input_release = release_var.get()
+                artist_var.set("")
+                release_var.set("")
 
-        #Create a Button
+            artist_insert_button = ttk.Button(top,text="Add new artist", command=lambda:[get_inputs(), AddArtist(self.input_artist, controller.login_result)]) # EDITING THIS RIGHT NOW DON@T FORGERT
+            artist_insert_button.grid(row=2, column=3)
+
+            release_insert_button = ttk.Button(top,text="Add new release (requires artist)", command=lambda:[get_inputs(), AddRelease(self.input_artist, self.input_release, controller.login_result)])
+            release_insert_button.grid(row=3, column=3)
+
+            # close button
+            popup_close_button = ttk.Button(top, text="Ok", command=lambda:close_popup(top))
+            popup_close_button.grid(row=1, column=1)
+        
+        label= ttk.Label(self, text="Add new artist or release")
+        label.grid(row=0, column=3)
+
         button= ttk.Button(self, text= "Click Me!", command=popupwin)
-        button.grid(row=0, column=2)
+        button.grid(row=1, column=3)
 
 
 class ReleaseFocusPage(tk.Frame):
