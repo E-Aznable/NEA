@@ -13,7 +13,7 @@ from io import BytesIO
 from AddReleaseHandler import *
 
 with open("backend.py") as backend:
-    exec(backend.read())
+    exec(backend.read()) # run backend to make sure local DB exists and works
 
 LARGE_FONT = ("Verdana", 16) # this is a fun way to do a global BIG FONT but I might change it
 
@@ -216,6 +216,9 @@ class CollectionPage(tk.Frame):
                 self.input_release = release_var.get()
                 artist_var.set("")
                 release_var.set("")
+
+            # make a check to see if artist is in table or not, and do AddBoth if they aren't
+            # just do the others seperately otherwise
 
             artist_insert_button = ttk.Button(top,text="Add new artist", command=lambda:[get_inputs(), AddArtist(self.input_artist, controller.login_result)]) # EDITING THIS RIGHT NOW DON@T FORGERT
             artist_insert_button.grid(row=2, column=3)
