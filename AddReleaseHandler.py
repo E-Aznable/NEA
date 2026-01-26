@@ -65,6 +65,11 @@ def AddArtist(artist_name, user_id): # artist func
 
 
 def AddRelease(artist_name, release_name, user_id): # release + tracks func
+
+    # make a check here to add a the given artist if they aren't already in the table?
+    AddArtist(artist_name, user_id) # wow I made my life so easy
+    # this basically works??
+
     encoded_artist = urllib.parse.quote(artist_name)
     encoded_release = urllib.parse.quote(release_name)
 
