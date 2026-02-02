@@ -117,8 +117,8 @@ class StartPage(tk.Frame):
             if login_result is None:
                 incorrect_label_func()
             else: # login and screen switch here
-                controller.show_frame(CollectionPage)
                 controller.set_login_result(login_result) # set the login result
+                controller.show_frame(CollectionPage)
             user_var.set("")
             pass_var.set("")
 
