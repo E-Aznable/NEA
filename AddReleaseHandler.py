@@ -40,35 +40,52 @@ def AddArtist(artist_name, user_id): # artist func
             print(f"Opened SQLite database with version {sqlite3.sqlite_version} successfully.")
             cursor = conn.cursor()
             # first check if this stuff is already in the table and break if so
-            result = cursor.execute(f"""SELECT DiscogsArtistID
-                            FROM artists
-                            WHERE DiscogsArtistID = ?""", (artist_id,)).fetchone()
+            result = cursor.execute(
+                "SELECT ArtistID FROM artists WHERE DiscogsArtistID = ?",
+                (artist_id,)
+            ).fetchone()
             if result:  # if the data is already there, then just say so and don't add
                 print("value already exists")
                 return False
-            else: # if data isn't there, add it
-                cursor.execute(f"""INSERT INTO artists (ArtistName, DiscogsArtistID, ArtistImage)
-                                VALUES ('{artist_name}', {artist_id}, '{artist_image_url}')""") # this is the DISCOGS ARTIST ID
-                cursor.execute(f"""SELECT ArtistID
-                                                FROM artists
-                                                WHERE ArtistName = '{artist_name}'""")
-                artist_id_result_tuple = cursor.fetchone()
-                artist_id_result = artist_id_result_tuple[0]
-                print(f"DEBUG 1:{artist_id_result}")
-                cursor.execute(f"""INSERT INTO user_artists (UserID, ArtistID)
-                                                VALUES ({user_id}, {artist_id_result})""") # this is the TABLE KEY ARTIST ID 
-                conn.commit()
-                print("data added successfully!")
-                return True
+            else:
+                cursor.execute(
+                    """
+                    INSERT INTO artists (ArtistName, DiscogsArtistID, ArtistImage)
+                    VALUES (?, ?, ?)
+                    """,
+                    (artist_name, artist_id, artist_image_url)
+                )
+
+                artist_id = cursor.execute(
+                    "SELECT ArtistID FROM artists WHERE DiscogsArtistID = ?",
+                    (artist_id,)
+                ).fetchone()[0]
+
+                # link artist to user (ignore if already linked)
+            cursor.execute(
+                """
+                INSERT OR IGNORE INTO user_artists (UserID, ArtistID)
+                VALUES (?, ?)
+                """,
+                (user_id, artist_id)
+            )
+
+            conn.commit()
+            return artist_id
+
     except sqlite3.OperationalError as e:
         print("Failed to open database:", e)
+        return False
 
 
 def AddRelease(artist_name, release_name, user_id): # release + tracks func
 
-    # make a check here to add a the given artist if they aren't already in the table?
+    # make a check here to add the given artist if they aren't already in the table?
     AddArtist(artist_name, user_id) # wow I made my life so easy
     # this basically works??
+
+    release_name = release_name
+    artist_name = artist_name
 
     encoded_artist = urllib.parse.quote(artist_name)
     encoded_release = urllib.parse.quote(release_name)
@@ -79,6 +96,9 @@ def AddRelease(artist_name, release_name, user_id): # release + tracks func
         data_response = json.load(urllib.request.urlopen(url))
     except urllib.error.URLError as e:
         print(e.reason)
+        return(e.reason)
+
+    print(data_response)
 
     master_id = data_response["results"][0]["master_id"]
     print(f"release master ID: {master_id}")
@@ -103,41 +123,67 @@ def AddRelease(artist_name, release_name, user_id): # release + tracks func
 
     try:
         with sqlite3.connect("MusicDB.db") as conn:
-            print(f"Opened SQLite database with version {sqlite3.sqlite_version} successfully.")
             cursor = conn.cursor()
-            # check if this stuff already exists too
-            result = cursor.execute(f"""SELECT DiscogsReleaseID
-                                        FROM releases
-                                        WHERE DiscogsReleaseID = ?""", (master_id,)).fetchone()
-            if result:  # if the data is already there, then just say so and don't add
-                print("value already exists")
-                return False
-            else:  # if data isn't there, add it
-                cursor.execute(f"""SELECT ArtistID
-                                                FROM artists
-                                                WHERE ArtistName = '{artist_name}'""")
-                artist_id_result_tuple = cursor.fetchone()
-                artist_id_result = artist_id_result_tuple[0]
-                print(f"DEBUG 2:{artist_id_result}")
-                cursor.execute(f"""INSERT INTO releases (ReleaseName, ArtistID, DiscogsReleaseID, ReleaseImage)
-                                                VALUES ('{release_name}', {artist_id_result}, {master_id}, '{release_image_url}')""")
 
-                cursor.execute(f"""SELECT ReleaseID
-                                                FROM releases
-                                                WHERE DiscogsReleaseID = '{master_id}'""")
-                release_id_result_tuple = cursor.fetchone()
-                release_id_result = release_id_result_tuple[0]
-                cursor.execute(f"""INSERT INTO user_releases (UserID, ReleaseID)
-                                                VALUES ({user_id}, {release_id_result})""")
+            # check if release already exists
+            existing = cursor.execute(
+                "SELECT ReleaseID FROM releases WHERE DiscogsReleaseID = ?",
+                (master_id,)
+            ).fetchone()
 
-                for i in range(len(tracklist)):
-                    cursor.execute(f"""INSERT INTO tracks 
-                                                (TrackName, TrackNum, ReleaseID)
-                                                VALUES ('{tracklist[i]}', {i+1}, {release_id_result})""")
-                    i+=1
+            if existing:
+                release_id = existing[0]
+            else:
+                artist_row = cursor.execute(
+                    "SELECT ArtistID FROM artists WHERE ArtistName = ?",
+                    (artist_name,)
+                ).fetchone()
 
-    except sqlite3.OperationalError as e:
-        print("Failed to open database:", e)
+                if not artist_row:
+                    print("Artist not found after insertion")
+                    return False
+
+                artist_id = artist_row[0]
+
+                cursor.execute(
+                    """
+                    INSERT INTO releases
+                        (ReleaseName, ArtistID, DiscogsReleaseID, ReleaseImage)
+                    VALUES (?, ?, ?, ?)
+                    """,
+                    (release_name, artist_id, master_id, release_image_url)
+                )
+
+                release_id = cursor.execute(
+                    "SELECT ReleaseID FROM releases WHERE DiscogsReleaseID = ?",
+                    (master_id,)
+                ).fetchone()[0]
+
+            # link release to user
+            cursor.execute(
+                """
+                INSERT OR IGNORE INTO user_releases (UserID, ReleaseID)
+                VALUES (?, ?)
+                """,
+                (user_id, release_id)
+            )
+
+            # insert tracks safely
+            for track_num, track_name in enumerate(tracklist, start=1):
+                cursor.execute(
+                    """
+                    INSERT INTO tracks (TrackName, TrackNum, ReleaseID)
+                    VALUES (?, ?, ?)
+                    """,
+                    (track_name, track_num, release_id)
+                )
+
+            conn.commit()
+            return True
+
+    except sqlite3.Error as e:
+        print("SQLite error (AddRelease):", e)
+        return False
 
 
 def AddBoth(artist_name, release_name, user_id): # very simple to do both at once lol

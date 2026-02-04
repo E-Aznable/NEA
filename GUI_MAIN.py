@@ -75,6 +75,8 @@ class DatabaseApp(tk.Tk):
 
     def show_frame(self, cont):
         frame = self.frames[cont]
+        if hasattr(frame, "on_show"):
+            frame.on_show()
         frame.tkraise()
 
     def set_login_result(self, result): # user id number
@@ -150,89 +152,128 @@ class StartPage(tk.Frame):
 class CollectionPage(tk.Frame):
     def __init__(self, parent, controller):
         tk.Frame.__init__(self, parent)
+        self.controller = controller
+
         label = ttk.Label(self, text="collection", font=LARGE_FONT)
-        label.grid(row=0, column=2, padx=10, pady=10)
-
+        label.grid(row=0, column=1, padx=10, pady=10)
         button1 = ttk.Button(self, text="back to login", command=lambda: controller.show_frame(StartPage))
-        button1.grid(row=0, column=1, padx=10, pady=10)
+        button1.grid(row=0, column=0, padx=10, pady=10)
 
-        current_user_id = controller.login_result
+        # make it scrolly with a canvas
+        self.canvas = tk.Canvas(self, borderwidth=0)
+        self.scrollbar = ttk.Scrollbar(
+            self, orient="vertical", command=self.canvas.yview
+        )
+        self.canvas.configure(yscrollcommand=self.scrollbar.set)
 
-        def display_database(current_user_id):
-            conn = sqlite3.connect("MusicDB.db")
-            cursor = conn.cursor()
-            # SQL query for release names, art and artist names
-            cursor.execute(f"""SELECT releases.ReleaseName, artists.ArtistName, releases.ReleaseImage
-                            FROM releases, artists, user_releases, user_artists, users
-                            WHERE user_releases.ReleaseID = releases.ReleaseID
-                            AND user_artists.ArtistID = artists.ArtistID
-                            AND user_releases.UserID = users.UserID
-                            AND user_artists.UserID = users.UserID
-                            AND releases.ArtistID = artists.ArtistID
-                            AND users.UserID = {current_user_id}""") # this isnt happy
-            i = 1
-            j = 2
-            for release in cursor:
-                release_grouped = ttk.LabelFrame(self, text=f"{release[0]} - {release[1]}") # contain a release in an individual box that can be made clickable (hopefully)
-                release_grouped.grid(row=j, column=i, padx=10, pady=10)
+        self.scrollbar.grid(row=2, column=4, sticky="ns")
+        self.canvas.grid(row=2, column=0, columnspan=4, sticky="nsew")
 
-                # using webimage class
-                web_image = WebImage(release[2]) #  I'm pretty sure this is the nicest way to get the image, be careful if you add more return fields though!
-                img = web_image.get() # return the img to be used
-                imagelab = ttk.Label(release_grouped, image=img) # stick the image in the release group frame
-                imagelab.grid(row=0, column=0)
-                imagelab.image = img # store the image reference in the label so its displayed and not trashed
+        # frame goes inside the canvas
+        self.scrollable_frame = ttk.Frame(self.canvas)
 
-                i+=1
-                if i > 5: # count up to 5 images in a row before a new row is started
-                    i = 1
-                    j += 1
-            
-        display_database(current_user_id)
-        refresh_button = ttk.Button(self, text="refresh collection", command=lambda: display_database(current_user_id))
-        refresh_button.grid(row=1, column=2, padx=10, pady=10)
+        self.canvas_window = self.canvas.create_window(
+            (0, 0), window=self.scrollable_frame, anchor="nw"
+        )
 
-        # going to put the 'add new release' thing as a popup in here for now
-        def close_popup(top):
-            top.destroy()
+        # resize scroll region when contents change
+        self.scrollable_frame.bind(
+            "<Configure>",
+            lambda e: self.canvas.configure(
+                scrollregion=self.canvas.bbox("all")
+            )
+        )
 
-        def popupwin():
-            # Toplevel window so it appears above the rest of the app
-            top = Toplevel(self)
-            top.geometry("400x400")
+        # allow the resizing
+        self.grid_rowconfigure(1, weight=1)
+        self.grid_columnconfigure(0, weight=1)
 
-            artist_var=tk.StringVar()
-            artist_label = tk.Label(top, text="artist name:")
-            artist_label.grid(row=2, column=1, padx=10, pady=10)
-            artist_entry = tk.Entry(top, textvariable = artist_var)
-            artist_entry.grid(row=2, column=2, padx=10, pady=10)
+        # Buttons
+        ttk.Button(self, text="Refresh Collection", command=self.display_database).grid(row=1, column=0, padx=10, pady=10)
+        ttk.Button(self, text="Add New Artist or Release", command=self.pop_up_win).grid(row=1, column=1, padx=10, pady=10)
 
-            release_var=tk.StringVar()
-            release_label = tk.Label(top, text="release name:")
-            release_label.grid(row=3, column=1, padx=10, pady=10)
-            release_entry = tk.Entry(top, textvariable = release_var)
-            release_entry.grid(row=3, column=2, padx=10, pady=10)
+        # mouse scrolling for the scrolly canvas
+        def _on_mousewheel(event):
+            if self.tk.call("tk", "windowingsystem") == "aqua":  # actually useful for college computers lol
+                self.canvas.yview_scroll(-1 * event.delta, "units")
+            else:  # Windows and Linux
+                self.canvas.yview_scroll(-1 * (event.delta // 120), "units")
 
-            def get_inputs():
-                self.input_artist = artist_var.get()
-                self.input_release = release_var.get()
-                artist_var.set("")
-                release_var.set("")
+        self.canvas.bind("<Enter>", lambda e: self.canvas.bind_all("<MouseWheel>", _on_mousewheel))
+        self.canvas.bind("<Leave>", lambda e: self.canvas.unbind_all("<MouseWheel>"))
 
-            artist_insert_button = ttk.Button(top,text="Add new artist", command=lambda:[get_inputs(), AddArtist(self.input_artist, controller.login_result)])
-            artist_insert_button.grid(row=2, column=3)
+    def on_show(self):
+        self.display_database()
 
-            release_insert_button = ttk.Button(top,text="Add new release (requires artist)", command=lambda:[get_inputs(), AddRelease(self.input_artist, self.input_release, controller.login_result)])
-            release_insert_button.grid(row=3, column=3)
+    def display_database(self):
+        current_user_id = self.controller.login_result
+        if current_user_id is None:
+            return
 
-            popup_close_button = ttk.Button(top, text="Ok", command=lambda:close_popup(top))
-            popup_close_button.grid(row=1, column=1)
-        
-        label= ttk.Label(self, text="Add new artist or release")
-        label.grid(row=0, column=3)
+        conn = sqlite3.connect("MusicDB.db")
+        cursor = conn.cursor()
 
-        button= ttk.Button(self, text= "Click Me!", command=popupwin)
-        button.grid(row=1, column=3)
+        cursor.execute("""
+                       SELECT releases.ReleaseName, artists.ArtistName, releases.ReleaseImage
+                       FROM releases
+                                JOIN artists ON releases.ArtistID = artists.ArtistID
+                                JOIN user_releases ON user_releases.ReleaseID = releases.ReleaseID
+                       WHERE user_releases.UserID = ?
+                       """, (current_user_id,))
+
+        row = 0
+        col = 0
+
+        for release_name, artist_name, image_url in cursor.fetchall():
+            frame = ttk.LabelFrame(
+                self.scrollable_frame,
+                text=f"{release_name} - {artist_name}"
+            )
+            frame.grid(row=row, column=col, padx=10, pady=10)
+
+            web_image = WebImage(image_url)
+            img = web_image.get()
+
+            img_label = ttk.Label(frame, image=img)
+            img_label.image = img  # DONT trash it
+            img_label.pack()
+
+            col += 1
+            if col >= 5: # new row after 5 columns
+                col = 0
+                row += 1
+
+        conn.close()
+
+    # going to put the 'add new release' thing as a popup in here for now
+    def pop_up_win(self):
+        top = Toplevel(self)
+        top.geometry("400x400")
+
+        artist_var = tk.StringVar()
+        release_var = tk.StringVar()
+
+        tk.Label(top, text="Artist name:").grid(row=2, column=1, padx=10, pady=10)
+        tk.Entry(top, textvariable=artist_var).grid(row=2, column=2, padx=10, pady=10)
+
+        tk.Label(top, text="Release name:").grid(row=3, column=1, padx=10, pady=10)
+        tk.Entry(top, textvariable=release_var).grid(row=3, column=2, padx=10, pady=10)
+
+        def get_inputs():
+            self.input_artist = artist_var.get()
+            self.input_release = release_var.get()
+            artist_var.set("")
+            release_var.set("")
+
+        ttk.Button(top, text="Add New Artist",
+                   command=lambda: [get_inputs(), AddArtist(self.input_artist, self.controller.login_result)]
+                   ).grid(row=2, column=3)
+
+        ttk.Button(top, text="Add New Release",
+                   command=lambda: [get_inputs(), AddRelease(self.input_artist, self.input_release, self.controller.login_result)]
+                   ).grid(row=3, column=3)
+
+        ttk.Button(top, text="Close", command=top.destroy).grid(row=1, column=1)
 
 
 class ReleaseFocusPage(tk.Frame):
