@@ -34,7 +34,7 @@ class WebImage:
 
             # img must be resized before it is a PhotoImage, annoyingly
             self.image = Image.open(BytesIO(u.content))
-            self.resized_image = self.image.resize((200,200))
+            self.resized_image = self.image.resize((200,200)) # nice middle ground size
             self.image = ImageTk.PhotoImage(self.resized_image)
         except requests.exceptions.RequestException as e:
             print(f"Error downloading image: {e}")
@@ -190,17 +190,17 @@ class CollectionPage(tk.Frame):
             self.canvas.yview_scroll(-1, "units")
         elif event.num == 5:  # linux scroll down
             self.canvas.yview_scroll(1, "units")
-        else:  # windows/mac
+        else:  # windows/mac is simpler
             self.canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
 
     def display_database(self):
-        # Clear old widgets
+        # clear old widgets
         for widget in self.scrollable_frame.winfo_children():
             widget.destroy()
         self.images.clear()
 
         user_id = self.controller.login_result
-        if not user_id:
+        if not user_id: # get the id of the current user
             return
 
         conn = sqlite3.connect("MusicDB.db")
@@ -238,7 +238,7 @@ class CollectionPage(tk.Frame):
 
         canvas_width = self.canvas.winfo_width()
         if canvas_width < 10:
-            self.after(100, self.wrap_images)
+            self.after(100, self.wrap_images) # this wait is for safety but i might get rid
             return
 
         padding = 10
@@ -253,7 +253,7 @@ class CollectionPage(tk.Frame):
 
     def open_release_page(self, release_id): # func that makes clickable images useful
         page = self.controller.frames[ReleaseFocusPage]
-        if hasattr(page, "set_release"):
+        if hasattr(page, "set_release"): # what a weird function name
             page.set_release(release_id)
         self.controller.show_frame(ReleaseFocusPage)
 
@@ -277,9 +277,7 @@ class CollectionPage(tk.Frame):
             release_var.set("")
 
         ttk.Button(top, text="Add New Artist",command=lambda: [get_inputs(), AddArtist(self.input_artist, self.controller.login_result)]).grid(row=2, column=0, padx=10, pady=10)
-
         ttk.Button(top, text="Add New Release",command=lambda: [get_inputs(), AddRelease(self.input_artist, self.input_release, self.controller.login_result)]).grid(row=2, column=1, padx=10, pady=10)
-
         ttk.Button(top, text="Close", command=top.destroy).grid(row=3, column=0, columnspan=2, pady=10)
 
 
@@ -289,19 +287,46 @@ class ReleaseFocusPage(tk.Frame):
         self.controller = controller
         self.current_image = None  # keep reference to Tk image
 
-        self.title_label = ttk.Label(self, text="", font=LARGE_FONT)
-        self.title_label.grid(row=0, column=0, padx=10, pady=10, sticky="w")
-
         self.back_button = ttk.Button(self, text="Back to Collection", command=lambda: controller.show_frame(CollectionPage))
-        self.back_button.grid(row=0, column=1, padx=10, pady=10, sticky="e")
+        self.back_button.grid(row=0, column=0, padx=10, pady=10, sticky="nw")
+        
+        self.title_label = ttk.Label(self, text="", font=("Verdana", 12)) # make to set later
+        self.title_label.grid(row=1, column=0, padx=10, pady=10, sticky="nw")
 
-        self.image_label = ttk.Label(self)
-        self.image_label.grid(row=1, column=0, columnspan=2, padx=10, pady=10)
+        self.image_label = ttk.Label(self) # make to set later
+        self.image_label.grid(row=2, column=0, padx=10, pady=10, sticky="nw")
 
-        self.artist_label = ttk.Label(self, text="", font=("Verdana", 12))
-        self.artist_label.grid(row=2, column=0, columnspan=2, padx=10, pady=10)
+        self.artist_label = ttk.Label(self, text="", font=("Verdana", 12)) # make to set later
+        self.artist_label.grid(row=3, column=0, padx=10, pady=10, sticky="nw")
+
+        # scrolly canvas + scrollbar AGAIN for tracks 
+        self.canvas = tk.Canvas(self, borderwidth=0, background="#f0f0f0")
+        self.scrollbar = ttk.Scrollbar(self, orient="vertical", command=self.canvas.yview)
+        self.canvas.configure(yscrollcommand=self.scrollbar.set)
+        self.scrollbar.grid(row=1, column=4, rowspan=4, sticky="ns")
+        self.canvas.grid(row=1, column=2, columnspan=2, rowspan=4, sticky="nsew")
+        self.scrollable_frame = ttk.Frame(self.canvas)
+        self.canvas_window = self.canvas.create_window((0, 0), window=self.scrollable_frame, anchor="nw")
+        self.scrollable_frame.bind("<Configure>", lambda e: self.canvas.configure(scrollregion=self.canvas.bbox("all")))
+        self.canvas.bind_all("<MouseWheel>", self._on_mousewheel)
+        self.canvas.bind_all("<Button-4>", self._on_mousewheel) # mousewheel in two classes seems to break it in both? bad
+        self.canvas.bind_all("<Button-5>", self._on_mousewheel)
+        self.grid_rowconfigure(1, weight=1)
+        self.grid_columnconfigure(1, weight=1)
+
+    def _on_mousewheel(self, event): # rlly stupid how difficult this is
+        if event.num == 4:  # linux scroll up
+            self.canvas.yview_scroll(-1, "units")
+        elif event.num == 5:  # linux scroll down
+            self.canvas.yview_scroll(1, "units")
+        else:  # windows/mac is simpler
+            self.canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
 
     def set_release(self, release_id):
+        # clear old widgets just in case
+        for widget in self.scrollable_frame.winfo_children():
+            widget.destroy()
+
         # fetch release info from DB and display it
         conn = sqlite3.connect("MusicDB.db")
         cursor = conn.cursor()
@@ -316,8 +341,8 @@ class ReleaseFocusPage(tk.Frame):
 
         if row:
             release_name, artist_name, image_url = row
-            self.title_label.config(text=release_name)
-            self.artist_label.config(text=f"By {artist_name}")
+            self.title_label.config(text=release_name) # dynamic release name
+            self.artist_label.config(text=f"By {artist_name}") # dynamic artist name
 
             web_image = WebImage(image_url)
             img = web_image.get()
@@ -343,9 +368,23 @@ class ReleaseFocusPage(tk.Frame):
             WHERE ReleaseID = ?
         """, (release_id,))
         tracks = cursor.fetchall()
+
+        if tracks:
+            for track in tracks:
+                track_name = track[0]
+                print(track_name)
+                track_num = track[1]
+                print(track_num)
+                frame = ttk.LabelFrame(self.scrollable_frame, text=f"{track_name} - {track_num}")
+                frame.grid(row=track_num, column=3, padx=10, pady=10)
+
+        else:
+            self.title_label.config(text="Tracks not found")
+            self.artist_label.config(text="")
+            self.image_label.config(image="", text="")
+            
         conn.close()
         # this needs to actually display tracks - DO THIS
-
 
 
 class ReviewPage(tk.Frame): # this is first on the chopping block if I run out of time
