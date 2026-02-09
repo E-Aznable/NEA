@@ -8,10 +8,8 @@ import urllib.parse
 import urllib.request
 import sqlite3
 
-# may need to make seperate functions that only add an artist
-# or a release, which must be linked to an existing artist
+
 def AddArtist(artist_name, user_id): # artist func
-    # need to take an input from another file
     encoded_artist = urllib.parse.quote(artist_name)
 
     # Construct the Discogs API URL using consumer key and secret for authentication
@@ -79,10 +77,8 @@ def AddArtist(artist_name, user_id): # artist func
 
 
 def AddRelease(artist_name, release_name, user_id): # release + tracks func
-
-    # make a check here to add the given artist if they aren't already in the table?
     AddArtist(artist_name, user_id) # wow I made my life so easy
-    # this basically works??
+    # this basically works?? crazy
 
     release_name = release_name
     artist_name = artist_name
@@ -186,6 +182,51 @@ def AddRelease(artist_name, release_name, user_id): # release + tracks func
         return False
 
 
+def AddNew(artist_id):
+    # DO THIS
+    artist_id = artist_id
+    url = f"https://api.discogs.com/artists/{artist_id}/releases?sort=year&sort_order=desc"
+
+    try:
+        data_response = json.load(urllib.request.urlopen(url))
+    except urllib.error.URLError as e:
+        print(e.reason)
+        return(e.reason)
+
+    print(data_response)
+    
+    latest_discog_id = data_response["releases"][0]["id"]
+    print(f"latest discog ID: {latest_discog_id}")
+
+    latest_release_name = data_response["releases"][0]["title"]
+    print(f"latest release name: {latest_release_name}")
+
+    try:
+        main_release_id = data_response["releases"][0]["main_release"]
+    except:
+        # discogs list things like physical releases and promo merch
+        # we only want album masters
+        # loop through to make sure all fields are there and correct
+        i = 1
+        if not main_release_id: # unhappy, FIX
+            for i in range(len(data_response["releases"])):
+                print(f"try {i}")
+                if ('main_release' in data_response["releases"][i]):
+                    main_release_id = str(data_response["releases"][i]["main_release"])
+
+                latest_discog_id = str(data_response["releases"][i]["id"])
+                print(latest_discog_id)
+
+                latest_release_name = data_response["releases"][i]["title"]
+                print(latest_release_name)
+                break
+        else:
+            print("SUCCESS: should be all good")  
+
+
 def AddBoth(artist_name, release_name, user_id): # very simple to do both at once lol
     AddArtist(artist_name, user_id)
     AddRelease(artist_name, release_name, user_id)
+
+
+AddNew(3707279)
