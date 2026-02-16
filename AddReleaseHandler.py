@@ -1,4 +1,3 @@
-# this file is a combination of the old GetArtistID, GetReleaseID and LinkTracksToRelease files, and does everything they do in one fell swoop
 # takes an input artist name and release name to find necessary data and create database entries for the releas
 
 import urllib.parse
@@ -9,7 +8,7 @@ import urllib.request
 import sqlite3
 
 
-def AddArtist(artist_name, user_id): # artist func
+def AddArtist(artist_name, user_id):  # artist func
     encoded_artist = urllib.parse.quote(artist_name)
 
     # Construct the Discogs API URL using consumer key and secret for authentication
@@ -76,8 +75,8 @@ def AddArtist(artist_name, user_id): # artist func
         return False
 
 
-def AddRelease(artist_name, release_name, user_id): # release + tracks func
-    AddArtist(artist_name, user_id) # wow I made my life so easy
+def AddRelease(artist_name, release_name, user_id):  # release + tracks func
+    AddArtist(artist_name, user_id)  # wow I made my life so easy
     # this basically works?? crazy
 
     release_name = release_name
@@ -92,7 +91,7 @@ def AddRelease(artist_name, release_name, user_id): # release + tracks func
         data_response = json.load(urllib.request.urlopen(url))
     except urllib.error.URLError as e:
         print(e.reason)
-        return(e.reason)
+        return (e.reason)
 
     print(data_response)
 
@@ -155,24 +154,24 @@ def AddRelease(artist_name, release_name, user_id): # release + tracks func
                     (master_id,)
                 ).fetchone()[0]
 
-            # link release to user
-            cursor.execute(
-                """
-                INSERT OR IGNORE INTO user_releases (UserID, ReleaseID)
-                VALUES (?, ?)
-                """,
-                (user_id, release_id)
-            )
-
-            # insert tracks safely
-            for track_num, track_name in enumerate(tracklist, start=1):
+                # link release to user
                 cursor.execute(
                     """
-                    INSERT INTO tracks (TrackName, TrackNum, ReleaseID)
-                    VALUES (?, ?, ?)
+                    INSERT OR IGNORE INTO user_releases (UserID, ReleaseID)
+                    VALUES (?, ?)
                     """,
-                    (track_name, track_num, release_id)
+                    (user_id, release_id)
                 )
+
+                # insert tracks safely
+                for track_num, track_name in enumerate(tracklist, start=1):
+                    cursor.execute(
+                        """
+                        INSERT INTO tracks (TrackName, TrackNum, ReleaseID)
+                        VALUES (?, ?, ?)
+                        """,
+                        (track_name, track_num, release_id)
+                    )
 
             conn.commit()
             return True
@@ -182,19 +181,21 @@ def AddRelease(artist_name, release_name, user_id): # release + tracks func
         return False
 
 
-def AddNew(artist_id):
+def AddNew(artist_id, artist_name, user_id): # take artist name because we can do that way easier before rather than querying db to get it
     # DO THIS
+    user_id = user_id
     artist_id = artist_id
+    artist_name = artist_name
     url = f"https://api.discogs.com/artists/{artist_id}/releases?sort=year&sort_order=desc"
 
     try:
         data_response = json.load(urllib.request.urlopen(url))
     except urllib.error.URLError as e:
         print(e.reason)
-        return(e.reason)
+        return e.reason
 
     print(data_response)
-    
+
     latest_discog_id = data_response["releases"][0]["id"]
     print(f"latest discog ID: {latest_discog_id}")
 
@@ -203,30 +204,33 @@ def AddNew(artist_id):
 
     try:
         main_release_id = data_response["releases"][0]["main_release"]
+        print(f"main release ID: {main_release_id}")
     except:
         # discogs list things like physical releases and promo merch
         # we only want album masters
         # loop through to make sure all fields are there and correct
         i = 1
-        if not main_release_id: # unhappy, FIX
-            for i in range(len(data_response["releases"])):
-                print(f"try {i}")
-                if ('main_release' in data_response["releases"][i]):
-                    main_release_id = str(data_response["releases"][i]["main_release"])
+        for i in range(len(data_response["releases"])):
+            print(f"try {i}")
+            if 'main_release' in data_response["releases"][i]:
+                main_release_id = str(data_response["releases"][i]["main_release"])
+                print(f"main release ID: {main_release_id}")
 
-                latest_discog_id = str(data_response["releases"][i]["id"])
-                print(latest_discog_id)
+                latest_discog_id = data_response["releases"][i]["id"]
+                print(f"latest discog ID: {latest_discog_id}")
 
                 latest_release_name = data_response["releases"][i]["title"]
-                print(latest_release_name)
-                break
-        else:
-            print("SUCCESS: should be all good")  
+                print(f"latest release name: {latest_release_name}")
+
+                AddRelease(artist_name, latest_release_name, user_id)
+                return True # like this?
+    else:
+        print("SUCCESS: should be all good")
+        AddRelease(artist_name, latest_release_name, user_id)
+        return True
 
 
-def AddBoth(artist_name, release_name, user_id): # very simple to do both at once lol
+
+def AddBoth(artist_name, release_name, user_id):  # very simple to do both at once lol
     AddArtist(artist_name, user_id)
     AddRelease(artist_name, release_name, user_id)
-
-
-AddNew(3707279)

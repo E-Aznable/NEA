@@ -86,73 +86,72 @@ class DatabaseApp(tk.Tk):
 
 class StartPage(tk.Frame):
     def __init__(self, parent, controller):
-        tk.Frame.__init__(self, parent)
+        super().__init__(parent)
 
-        label = ttk.Label(self, text="login page", font=LARGE_FONT)
-        label.grid(row=0, column=2, padx=10, pady=10)
+        self.grid_columnconfigure(0, weight=1)
+        self.grid_rowconfigure(0, weight=1)
 
-        # conn = sqlite3.connect("MusicDB.db") # using our db
-        # cursor = conn.cursor() # just in case
+        style = ttk.Style()
+        style.configure("LoginTitle.TLabel", font=("Segoe UI", 20, "bold")) # there's probably an easy way to set these in the database class but this is simple
+        style.configure("Login.TLabel", font=("Segoe UI", 11))
+        style.configure("Login.TButton", font=("Segoe UI", 10))
 
-        user_var=tk.StringVar() # set username as a string var for input later
-        user_label = tk.Label(self, text="username:")
-        user_label.grid(row=2, column=1, padx=10, pady=10)
-        user_entry = tk.Entry(self, textvariable = user_var)
-        user_entry.grid(row=2, column=2, columnspan=2, padx=10, pady=10)
+        card = ttk.Frame(self, padding=30)
+        card.grid(row=0, column=0)
 
-        pass_var=tk.StringVar() # set password as string var too
-        pass_label = tk.Label(self, text="password:")
-        pass_label.grid(row=3, column=1, padx=10, pady=10)
-        pass_entry = tk.Entry(self, textvariable = pass_var)
-        pass_entry.grid(row=3, column=2, columnspan=2, padx=10, pady=10)
+        ttk.Label(card, text="Welcome Back", style="LoginTitle.TLabel").grid(row=0, column=0, columnspan=2, pady=(0, 20))
 
-        sign_in_button = tk.Button(self, text="Sign in", command=lambda: sign_in_user())
-        sign_in_button.grid(row=4, column=2, sticky="w")
-        sign_up_button = tk.Button(self, text="Sign up", command=lambda: sign_up_new_user())
-        sign_up_button.grid(row=4, column=3, sticky="w")
+        user_var = tk.StringVar()
+        pass_var = tk.StringVar()
 
-        self.incorrect_label = tk.Label(self, text="no input yet") # as far as I can tell this kind of needs to exist before its actually used
+        ttk.Label(card, text="Username", style="Login.TLabel").grid(row=1, column=0, sticky="w", pady=5)
+        user_entry = ttk.Entry(card, textvariable=user_var, width=25)
+        user_entry.grid(row=2, column=0, columnspan=2, pady=(0, 15))
+
+        ttk.Label(card, text="Password", style="Login.TLabel").grid(row=3, column=0, sticky="w", pady=5)
+        pass_entry = ttk.Entry(card, textvariable=pass_var, show="*", width=25)
+        pass_entry.grid(row=4, column=0, columnspan=2, pady=(0, 20))
+
+        self.message_label = ttk.Label(card, text="")
+        self.message_label.grid(row=7, column=0, columnspan=2, pady=(10, 0))
 
         def sign_in_user():
-            input_name = user_var.get() # I think this is probably the nicest way to do this
+            input_name = user_var.get()
             input_pass = pass_var.get()
-            login_result = login_system.login(self, input_name, input_pass)
-            if login_result is None:
-                incorrect_label_func()
-            else: # login and screen switch here
-                controller.set_login_result(login_result) # set the login result
+            result = login_system.login(self, input_name, input_pass) # dw about this its literally fine
+
+            if result is None:
+                self.message_label.config(
+                    text="Incorrect username or password",
+                    foreground="red"
+                )
+            else:
+                controller.set_login_result(result)
                 controller.show_frame(CollectionPage)
+
             user_var.set("")
             pass_var.set("")
 
-        def sign_up_new_user():
+        def sign_up_user():
             input_name = user_var.get()
             input_pass = pass_var.get()
             login_system.register(self, input_name, input_pass)
+
+            self.message_label.config(text="User successfully created",foreground="green")
+
             user_var.set("")
             pass_var.set("")
-            success_msg_func()
 
-        def incorrect_label_func():  # makes an 'incorrect username or password' msg appear
-            if self.incorrect_label:
-                self.incorrect_label.destroy()
-            self.incorrect_label = tk.Label(self, text ="incorrect username or password", fg="red")
-            self.incorrect_label.grid(row=5, column=2, padx=10, pady=10)
+        ttk.Button(card,text="Sign In",style="Login.TButton",command=sign_in_user).grid(row=5, column=0, pady=5, sticky="ew")
+        ttk.Button(card,text="Sign Up",style="Login.TButton",command=sign_up_user).grid(row=5, column=1, pady=5, padx=(10, 0), sticky="ew") # these cards look way nicer than the frames what was I doing
 
-        def success_msg_func():
-            if self.incorrect_label:
-                self.incorrect_label.destroy()
-            self.incorrect_label = tk.Label(self, text ="successfully added new user", fg="green")
-            self.incorrect_label.grid(row=5, column=2, padx=10, pady=10)
+        user_entry.focus()
 
-        # controller.bind("<Return>", sign_in_user()) # keyboard shortcut to make enter key sign in, not working IDK I'll do it later
-
-    login_system = login_system()
 
 
 class CollectionPage(tk.Frame):
     def __init__(self, parent, controller):
-        tk.Frame.__init__(self, parent)
+        tk.Frame.__init__(self, parent) # should maybe change this to a super, might be nicer
         self.controller = controller
         self.images = []  # keep Tk references
 
@@ -197,40 +196,50 @@ class CollectionPage(tk.Frame):
             self.canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
 
     def display_database(self):
-        # clear old widgets
-        for widget in self.scrollable_frame.winfo_children():
-            widget.destroy()
-        self.images.clear()
+        # remove old scrolly frame and canvas window
+        self.canvas.delete("all")
+
+        # new scrolly
+        self.scrollable_frame = ttk.Frame(self.canvas)
+        self.canvas_window = self.canvas.create_window((0, 0), window=self.scrollable_frame, anchor="nw")
+
+        self.images.clear()  # clear old image references
 
         user_id = self.controller.login_result
-        if not user_id: # get the id of the current user
+        if not user_id:
             return
 
         conn = sqlite3.connect("MusicDB.db")
         cursor = conn.cursor()
         cursor.execute("""
-            SELECT releases.ReleaseID, releases.ReleaseName, artists.ArtistName, releases.ReleaseImage
-            FROM releases
-            JOIN artists ON releases.ArtistID = artists.ArtistID
-            JOIN user_releases ON user_releases.ReleaseID = releases.ReleaseID
-            WHERE user_releases.UserID = ?
-        """, (user_id,))
+                       SELECT releases.ReleaseID, releases.ReleaseName, artists.ArtistName, releases.ReleaseImage
+                       FROM releases
+                                JOIN artists ON releases.ArtistID = artists.ArtistID
+                                JOIN user_releases ON user_releases.ReleaseID = releases.ReleaseID
+                       WHERE user_releases.UserID = ?
+                       """, (user_id,))
         data = cursor.fetchall()
         conn.close()
 
-        # create frames for each release
+        # create cards for each release
         for idx, (release_id, release_name, artist_name, image_url) in enumerate(data):
-            frame = ttk.LabelFrame(self.scrollable_frame, text=f"{release_name} - {artist_name}")
+            card = ttk.Frame(self.scrollable_frame, padding=10)
+            card.grid(row=0, column=idx, padx=15, pady=15)
+
             web_image = WebImage(image_url)
             img = web_image.get()
             if img:
-                self.images.append(img)  # keep reference
-                label = ttk.Label(frame, image=img)
-                label.image = img
-                label.grid(row=0, column=0)
-                label.bind("<Button-1>", lambda e, rid=release_id: self.open_release_page(rid)) # first part of the super cool clickable images
+                self.images.append(img)
+                img_label = ttk.Label(card, image=img)
+                img_label.pack()
+                img_label.bind("<Button-1>", lambda e, rid=release_id: self.open_release_page(rid))
 
-            frame.grid(row=0, column=idx, padx=10, pady=10)  # temp row/col, wrap_images will fix
+            ttk.Label(card, text=release_name, style="CardTitle.TLabel").pack(pady=(8, 0))
+            ttk.Label(card, text=artist_name).pack()
+
+        # update scrolly
+        self.scrollable_frame.update_idletasks()
+        self.canvas.configure(scrollregion=self.canvas.bbox("all"))
 
         self.wrap_images()
 
@@ -279,60 +288,77 @@ class CollectionPage(tk.Frame):
             artist_var.set("")
             release_var.set("")
 
-        ttk.Button(top, text="Add New Artist",command=lambda: [get_inputs(), AddArtist(self.input_artist, self.controller.login_result)]).grid(row=2, column=0, padx=10, pady=10)
+        ttk.Button(top, text="Add New Artist",command=lambda: [get_inputs(), AddArtist(self.input_artist, self.controller.login_result)]).grid(row=2, column=0, padx=10, pady=10) # these variables always get set dont worry about it
         ttk.Button(top, text="Add New Release",command=lambda: [get_inputs(), AddRelease(self.input_artist, self.input_release, self.controller.login_result)]).grid(row=2, column=1, padx=10, pady=10)
         ttk.Button(top, text="Close", command=top.destroy).grid(row=3, column=0, columnspan=2, pady=10)
 
 
+
 class ReleaseFocusPage(tk.Frame):
     def __init__(self, parent, controller):
-        tk.Frame.__init__(self, parent)
+        super().__init__(parent)
         self.controller = controller
-        self.current_image = None  # keep reference to Tk image
+        self.current_image = None
 
-        self.back_button = ttk.Button(self, text="Back to Collection", command=lambda: controller.show_frame(CollectionPage))
-        self.back_button.grid(row=0, column=0, padx=10, pady=10, sticky="nw")
-        
-        self.title_artist_label = ttk.Label(self, text="", font=("Verdana", 12)) # make to set later
-        self.title_artist_label.grid(row=1, column=0, padx=10, pady=10, sticky="nw")
+        style = ttk.Style()
+        style.configure("Title.TLabel", font=("Segoe UI", 18, "bold"))
+        style.configure("Track.TLabel", font=("Segoe UI", 11))
+        style.configure("Header.TButton", font=("Segoe UI", 10))
 
-        self.image_label = ttk.Label(self) # make to set later
-        self.image_label.grid(row=2, column=0, padx=10, pady=10, sticky="nw")
+        self.header = ttk.Frame(self)
+        self.header.grid(row=0, column=0, sticky="ew", padx=20, pady=(15, 5))
+        self.grid_columnconfigure(0, weight=1)
 
-        self.tracklist_label = ttk.Label(self, text="Tracklist", font=("Verdana", 12))
-        self.tracklist_label.grid(row=1, column=2, columnspan=2, sticky="nw")
+        self.back_button = ttk.Button(self.header,text="← Back",style="Header.TButton",command=lambda: controller.show_frame(CollectionPage))
+        self.back_button.pack(side="left")
 
-        # scrolly canvas + scrollbar AGAIN for tracks 
-        self.canvas = tk.Canvas(self, borderwidth=0, background="#f0f0f0")
-        self.scrollbar = ttk.Scrollbar(self, orient="vertical", command=self.canvas.yview)
-        self.canvas.configure(yscrollcommand=self.scrollbar.set)
-        self.scrollbar.grid(row=2, column=4, rowspan=2, sticky="ns")
-        self.canvas.grid(row=2, column=2, columnspan=2, rowspan=2, sticky="nsew")
-        self.scrollable_frame = ttk.Frame(self.canvas)
-        self.canvas_window = self.canvas.create_window((0, 0), window=self.scrollable_frame, anchor="nw")
-        self.scrollable_frame.bind("<Configure>", lambda e: self.canvas.configure(scrollregion=self.canvas.bbox("all")))
-        self.canvas.bind_all("<MouseWheel>", self._on_mousewheel)
-        self.canvas.bind_all("<Button-4>", self._on_mousewheel) # mousewheel in two classes seems to break it in both? bad
-        self.canvas.bind_all("<Button-5>", self._on_mousewheel)
+        self.title_artist_label = ttk.Label(self.header,text="",style="Title.TLabel")
+        self.title_artist_label.pack(side="left", padx=20)
+
+        self.main = ttk.Frame(self)
+        self.main.grid(row=1, column=0, sticky="nsew", padx=20, pady=20)
+
         self.grid_rowconfigure(1, weight=1)
-        self.grid_columnconfigure(1, weight=1)
+        self.main.grid_columnconfigure(0, weight=1)
+        self.main.grid_columnconfigure(1, weight=2)
+        self.main.grid_rowconfigure(0, weight=1)
 
-    def _on_mousewheel(self, event): # still stupid that this is the best way to do this
-        if event.num == 4:  # linux scroll up
-            self.canvas.yview_scroll(-1, "units")
-        elif event.num == 5:  # linux scroll down
-            self.canvas.yview_scroll(1, "units")
-        else:  # windows/mac is simpler
-            self.canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
+        self.image_label = ttk.Label(self.main)
+        self.image_label.grid(row=0, column=0, sticky="n")
+
+        # tracklist
+        self.track_container = ttk.Frame(self.main)
+        self.track_container.grid(row=0, column=1, sticky="nsew", padx=(30, 0))
+
+        ttk.Label(self.track_container,text="Tracklist",font=("Segoe UI", 14, "bold")).pack(anchor="w", pady=(0, 10))
+
+        # scrolly
+        self.canvas = tk.Canvas(self.track_container,borderwidth=0,highlightthickness=0)
+        self.scrollbar = ttk.Scrollbar(self.track_container,orient="vertical",command=self.canvas.yview)
+        self.canvas.configure(yscrollcommand=self.scrollbar.set)
+
+        self.scrollbar.pack(side="right", fill="y")
+        self.canvas.pack(side="left", fill="both", expand=True)
+
+        self.scrollable_frame = ttk.Frame(self.canvas)
+        self.canvas.create_window((0, 0),window=self.scrollable_frame,anchor="nw")
+
+        self.scrollable_frame.bind("<Configure>",lambda e: self.canvas.configure(scrollregion=self.canvas.bbox("all")))
+
+        # scroll only when mouse is over canvas
+        self.canvas.bind("<Enter>", lambda e: self.canvas.bind_all("<MouseWheel>", self._on_mousewheel))
+        self.canvas.bind("<Leave>", lambda e: self.canvas.unbind_all("<MouseWheel>"))
+
+    def _on_mousewheel(self, event):
+        self.canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
 
     def set_release(self, release_id):
-        # clear old widgets just in case
         for widget in self.scrollable_frame.winfo_children():
             widget.destroy()
 
-        # fetch release info from DB and display it
         conn = sqlite3.connect("MusicDB.db")
         cursor = conn.cursor()
+
         cursor.execute("""
             SELECT releases.ReleaseName, artists.ArtistName, releases.ReleaseImage
             FROM releases
@@ -340,24 +366,21 @@ class ReleaseFocusPage(tk.Frame):
             WHERE releases.ReleaseID = ?
         """, (release_id,))
         row = cursor.fetchone()
-        conn.close()
 
         if row:
             release_name, artist_name, image_url = row
-            self.title_artist_label.config(text=release_name + " - " + artist_name) # dynamic release name
-            # self.artist_label.config(text=f"By {artist_name}") # dynamic artist name
+            self.title_artist_label.config(
+                text=f"{release_name} — {artist_name}"
+            )
 
             web_image = WebImage(image_url)
             img = web_image.get()
+
             if img:
-                self.current_image = img  # keep reference
+                self.current_image = img
                 self.image_label.config(image=img)
             else:
-                self.image_label.config(image="", text="Image not available")
-        else:
-            self.title_artist_label.config(text="Release not found")
-            # self.artist_label.config(text="")
-            self.image_label.config(image="", text="")
+                self.image_label.config(text="Image not available")
 
         conn.close()
         self.display_tracks(release_id)
@@ -365,30 +388,23 @@ class ReleaseFocusPage(tk.Frame):
     def display_tracks(self, release_id):
         conn = sqlite3.connect("MusicDB.db")
         cursor = conn.cursor()
+
         cursor.execute("""
-            SELECT tracks.TrackName, tracks.TrackNum
+            SELECT TrackName, TrackNum
             FROM tracks
             WHERE ReleaseID = ?
+            ORDER BY TrackNum
         """, (release_id,))
+
         tracks = cursor.fetchall()
-
-        if tracks:
-            for track in tracks:
-                track_name = track[0]
-                print(track_name)
-                track_num = track[1]
-                print(track_num)
-                frame = ttk.LabelFrame(self.scrollable_frame)
-                test_label = ttk.Label(frame, text=f"{track_num} - {track_name}")
-                test_label.grid(row=0, column=0)
-                frame.grid(row=track_num, column=0, padx=2, sticky="w") # might wrap later
-
-        else:
-            self.title_artist_label.config(text="Tracks not found")
-            # self.artist_label.config(text="")
-            self.image_label.config(image="", text="")
-            
         conn.close()
+
+        for track_name, track_num in tracks:
+            track_frame = ttk.Frame(self.scrollable_frame)
+            track_frame.pack(fill="x", pady=4)
+            ttk.Label(track_frame,text=f"{track_num}.",width=4,anchor="w",style="Track.TLabel").pack(side="left")
+            ttk.Label(track_frame,text=track_name,style="Track.TLabel").pack(side="left", fill="x", expand=True)
+
 
 
 class ReviewPage(tk.Frame): # this is first on the chopping block if I run out of time
@@ -397,29 +413,121 @@ class ReviewPage(tk.Frame): # this is first on the chopping block if I run out o
         self.controller = controller
 
 
-class ArtistsPage(tk.Frame): # next up?
+
+class ArtistsPage(tk.Frame):
     def __init__(self, parent, controller):
         tk.Frame.__init__(self, parent)
         self.controller = controller
+        self.artist_id_vars = {}  # store checkbox states
+        self.artist_name_vars = {}
 
+        # header
         label = ttk.Label(self, text="Artists", font=LARGE_FONT)
         label.grid(row=0, column=0, padx=10, pady=10, sticky="w")
-        back_button = ttk.Button(self, text="Back to Login", command=lambda: controller.show_frame(StartPage))
+
+        back_button = ttk.Button(self,text="Back to Login",command=lambda: controller.show_frame(StartPage))
         back_button.grid(row=0, column=1, padx=10, pady=10, sticky="e")
 
-        all_artists_button = ttk.Button(self, text="Collection", command=lambda: controller.show_frame(CollectionPage))
-        all_artists_button.grid(row=0, column=2, padx=10, pady=10, sticky="e")
+        collection_button = ttk.Button(self,text="Collection",command=lambda: controller.show_frame(CollectionPage))
+        collection_button.grid(row=0, column=2, padx=10, pady=10, sticky="e")
 
-        # labels and buttons and scrolly canvas and stuff
-        # big button that has command=self.fetch_new_music
+        # scrolly
+        self.canvas = tk.Canvas(self, borderwidth=0, background="#f0f0f0")
+        self.scrollbar = ttk.Scrollbar(self, orient="vertical", command=self.canvas.yview)
+        self.canvas.configure(yscrollcommand=self.scrollbar.set)
+
+        self.scrollbar.grid(row=1, column=2, sticky="ns")
+        self.canvas.grid(row=1, column=0, columnspan=2, sticky="nsew")
+
+        self.scrollable_frame = ttk.Frame(self.canvas)
+        self.canvas.create_window((0, 0), window=self.scrollable_frame, anchor="nw")
+
+        self.scrollable_frame.bind("<Configure>",lambda e: self.canvas.configure(scrollregion=self.canvas.bbox("all")))
+
+        self.grid_rowconfigure(1, weight=1)
+        self.grid_columnconfigure(1, weight=1)
+
+        # button yay
+        ttk.Button(self,text="Find New Releases",command=self.fetch_new_music).grid(row=2, column=0, columnspan=3, pady=10)
 
     def display_artists_checkable(self):
-        # func to retrieve all user artists, display them in a scrolly list and with a checkbox so the user can select them for finding new music
-        pass
+        # clear old widgets just in case
+        for widget in self.scrollable_frame.winfo_children():
+            widget.destroy()
+
+        self.artist_id_vars.clear()
+
+        user_id = self.controller.login_result
+        if not user_id:
+            return
+
+        conn = sqlite3.connect("MusicDB.db")
+        cursor = conn.cursor()
+
+        cursor.execute("""
+            SELECT DISTINCT artists.ArtistID, artists.ArtistName
+            FROM artists
+            JOIN releases ON releases.ArtistID = artists.ArtistID
+            JOIN user_releases ON user_releases.ReleaseID = releases.ReleaseID
+            WHERE user_releases.UserID = ?
+            ORDER BY artists.ArtistName
+        """, (user_id,))
+
+        artists = cursor.fetchall()
+        conn.close()
+
+        for artist_id, artist_name in artists:
+            var = tk.BooleanVar()
+            self.artist_id_vars[artist_id] = var
+            self.artist_name_vars[artist_name] = var
+
+            frame = ttk.Frame(self.scrollable_frame, padding=5)
+            frame.pack(fill="x", padx=15, pady=5)
+
+            checkbox = ttk.Checkbutton(frame,text=artist_name,variable=var)
+            checkbox.pack(anchor="w")
 
     def fetch_new_music(self):
-        # func that uses fetch_new_releases from (FindNewReleases, needs to go into AddReleaseHandler) on any checkboxed artists
-        pass
+        selected_artist_ids = [
+            artist_id
+            for artist_id, var in self.artist_id_vars.items()
+            if var.get() # get artist IDs from checkboxed artists
+        ]
+        selected_artist_names = [
+            artist_name
+            for artist_name, var in self.artist_name_vars.items()
+            if var.get()
+        ]
+
+        print("selected artists:", selected_artist_ids, selected_artist_names)
+
+        conn = sqlite3.connect("MusicDB.db")
+        cursor = conn.cursor()
+
+        for i in range(len(selected_artist_ids)):
+            user_id = self.controller.login_result # duplicate but whatever ive got 4 days to finish this
+            if not user_id:
+                return
+            artist_id = selected_artist_ids[i]
+
+            cursor.execute("""
+                           SELECT DiscogsArtistID
+                           FROM artists
+                           WHERE ArtistID = ?
+                           """, (artist_id,))
+
+            artist_discogs_id_tuple = cursor.fetchone() # discogs id is what we need, not table id
+            artist_discogs_id = artist_discogs_id_tuple[0]
+            print(artist_discogs_id)
+
+            artist_name = selected_artist_names[i]
+            AddNew(artist_discogs_id, artist_name, user_id)
+
+        conn.close()
+
+    def on_show(self): # I should use this more in other classes lol
+        self.display_artists_checkable()
+
 
 
 app = DatabaseApp()
