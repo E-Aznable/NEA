@@ -91,30 +91,29 @@ else:
 # this function is useful in theory but i had to make a whole file just for handling new data with particulars to the database stuff
 # so the databse is added to from there insead
 # meaning this func is kind of useless now and would be a lot of effort to make useful
-def add_to_db (table, field, value): # value here is the actual data we want to add
-    try:
-        with sqlite3.connect("MusicDB.db") as conn:
-            print(f"Opened SQLite database with version {sqlite3.sqlite_version} successfully.")
-            cursor = conn.cursor()
-            # need to check if the value already exists first
-            result = cursor.execute(f"""SELECT * FROM {table}
-                                    WHERE {field}=?""",(value,)).fetchone()
-            
-            if result: # if a thing already exists
-                print("value already exists")
-                return False # if I end up using this, returning a boolean will be very helpful
-            
-            else: # if a thing doesn't exist
-                cursor.execute(f"""INSERT INTO {table} ({field})
-                                VALUES ('{value}')""") 
-                print("added data successfully") # success message for testing
-                conn.commit
-                return True
-
-
-    except sqlite3.OperationalError as e:
-        print("Failed to open database:", e)
-
+# def add_to_db (table, field, value): # value here is the actual data we want to add
+#     try:
+#         with sqlite3.connect("MusicDB.db") as conn:
+#             print(f"Opened SQLite database with version {sqlite3.sqlite_version} successfully.")
+#             cursor = conn.cursor()
+#             # need to check if the value already exists first
+#             result = cursor.execute(f"""SELECT * FROM {table}
+#                                     WHERE {field}=?""",(value,)).fetchone()
+#
+#             if result: # if a thing already exists
+#                 print("value already exists")
+#                 return False # if I end up using this, returning a boolean will be very helpful
+#
+#             else: # if a thing doesn't exist
+#                 cursor.execute(f"""INSERT INTO {table} ({field})
+#                                 VALUES ('{value}')""")
+#                 print("added data successfully") # success message for testing
+#                 conn.commit()
+#                 return True
+#
+#
+#     except sqlite3.OperationalError as e:
+#         print("Failed to open database:", e)
 
 # replace_in_db
 # and

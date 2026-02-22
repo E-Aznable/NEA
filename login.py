@@ -38,11 +38,10 @@ class login_system:
                     cursor.execute(f"""INSERT INTO users ({self.fields[0]}, {self.fields[1]})
                                     VALUES ('{self.values[0]}', '{self.values[1]}')""")
                     print("added data successfully") # succes message for testing
-                    conn.commit
+                    conn.commit()
 
         except sqlite3.OperationalError as e:
             print("Failed to open database:", e)
-        # end of copy paste
 
         self.fields = []
         self.values = [] # clear arrays just in case
@@ -84,36 +83,3 @@ class login_system:
                 # this still needs to return the user id and specify it as the id to be used for the current session
         if not success:
             print("username or password not recognised")
-
-
-    
-    # # add to table seperately
-    # def add_to_users (self): # value here is the actual data we want to add
-    #     try:
-    #         with sqlite3.connect("MusicDB.db") as conn:
-    #             print(f"Opened SQLite database with version {sqlite3.sqlite_version} successfully.")
-    #             cursor = conn.cursor()
-    #             # need to check if the value already exists first
-    #             result = cursor.execute(f"""SELECT * FROM users
-    #                                     WHERE {self.fields[0]}=?""",(self.values[0],)).fetchone()
-                    
-    #             if result: # if a thing already exists
-    #                 print("value already exists")
-                    
-    #             else: # if a thing doesn't exist
-    #                 cursor.execute(f"""INSERT INTO users ({self.fields[0]}, {self.fields[1]})
-    #                                 VALUES ('{self.values[0]}', '{self.values[1]}')""")
-    #                 print("added data successfully") # succes message for testing
-    #                 conn.commit
-
-    #     except sqlite3.OperationalError as e:
-    #         print("Failed to open database:", e)
-
-    #     self.fields = []
-    #     self.values = [] # clear arrays just in case
-
-
-# testing stuff down here
-
-# obj = login_system()
-# obj.login('testing', 'testing')
