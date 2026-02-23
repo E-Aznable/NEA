@@ -182,7 +182,6 @@ def AddRelease(artist_name, release_name, user_id):  # release + tracks func
 
 
 def AddNew(artist_id, artist_name, user_id): # take artist name because we can do that way easier before rather than querying db to get it
-    # DO THIS
     user_id = user_id
     artist_id = artist_id
     artist_name = artist_name
